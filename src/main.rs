@@ -1,13 +1,10 @@
 mod picture;
-use crate::picture::{Picture, PictureParameters};
+mod draw;
+use crate::picture::{Picture};
 use std::error::Error;
 
 fn main() -> Result<(), Box<dyn Error>> {
-   let mut pic = Picture::new(PictureParameters {
-       xres: 500,
-       yres: 500,
-       max_color: 255,
-   });
+   let mut pic = Picture::new(500, 500, 255);
 
    let center = (250.0, 250.0);
    let rays = 10.0;
@@ -27,6 +24,8 @@ fn main() -> Result<(), Box<dyn Error>> {
            pic.plot(x, y, (r, g, b))?;
        }
    }
+
+   draw::line(&pic, 0, 0, 0, 0);
 
    pic.save("image.ppm")?;
 
