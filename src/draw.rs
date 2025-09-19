@@ -1,47 +1,52 @@
-use crate::picture::{Picture};
+use crate::picture::Picture;
 use std::io;
-use std::mem;
 
-pub fn line(picture: &mut Picture, mut x0: isize, mut y0: isize, mut x1: isize, mut y1: isize, color: &(usize, usize, usize)) -> io::Result<()> {
-    if x0 > x1 {
-        mem::swap(&mut x0, &mut x1);
-        mem::swap(&mut y0, &mut y1);
-    }
+pub fn line(picture: &mut Picture, mut x0: isize, mut y0: isize, x1: isize, y1: isize, color: &(usize, usize, usize)) -> io::Result<()> {
+    // using absolute value to make it case insensitive for the different octants
+    let dx = (x1 - x0).abs();
+    let dy = (y1 - y0).abs();
 
-    let mut x = x0;
-    let mut y = y0;
-    let a = 2 * (y1 - y0);
-    let b = -2 * (x1 - x0);
-
+    // if left to right then ++ otherwise --
+    let step_x = if x1 > x0 { 1 } else { -1 };
+    // if down to up then ++ otherwise --
     let step_y = if y1 > y0 { 1 } else { -1 };
+    // ^^ these make it so 
 
-    // 0 <= m <= 1
-    let is_slope_frac = (y1 - y0) <= (x1 - x0);
+    // using dx and dy instead of y1 - y0 and x1 - x0 so it works for all octants
+    let a = 2 * dy;
+    let b = -2 * dx;
 
-    let mut d = if is_slope_frac { a + b/2 } else { a/2 + b };
+    // 0 <= |m| <= 1
+    let small_slope = dy <= dx;
 
-    if is_slope_frac {
-        while x <= x1 {
-            picture.plot(x as usize, y as usize, &color)?;
+    // if |m| > 1 then it's as if we're swapping x and y (reflection over y = x)
+    // a and b derived from line equation Ax + By + C
+    let mut d = if small_slope { a + b / 2 } else { a / 2 + b };
+
+    if small_slope {
+        // there is at least one pixel for every x value for small slope
+        while x0 != x1 {
+            picture.plot(x0 as usize, y0 as usize, &color)?;
 
             if d > 0 {
-                y += step_y;
+                y0 += step_y;
                 d += b;
             }
 
-            x += 1;
+            x0 += step_x;
             d += a;
         }
     } else {
-        while y <= y1 {
-            picture.plot(x as usize, y as usize, &color)?;
+        // there is at least one pixel for every y value for small slope
+        while y0 != y1 {
+            picture.plot(x0 as usize, y0 as usize, &color)?;
 
             if d < 0 {
-                x += 1;
+                x0 += step_x;
                 d += a;
             }
 
-            y += step_y;
+            y0 += step_y;
             d += b;
         }
     }
