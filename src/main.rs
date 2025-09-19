@@ -33,5 +33,25 @@ fn main() -> Result<(), Box<dyn Error>> {
 
     test_pic.save_as_file("test.ppm")?;
 
+    /*
+    
+    let mut line_pic = Picture::new(500, 500, 255);
+
+    for x in (0..line_pic.xres).step_by(10) {
+        for y in (0..line_pic.yres).step_by(10) {
+            line_pic.draw_line(x as isize, y as isize, (line_pic.xres - x / 10) as isize, (line_pic.yres - y / 10) as isize, &(x % 256, y % 256, (x + y) % 256))?;
+        }
+    }
+
+    for y in (5..line_pic.yres).step_by(10) {
+        for x in (5..line_pic.xres).step_by(10) {
+            line_pic.draw_line(x as isize, y as isize, (line_pic.xres - x / 10) as isize, (line_pic.yres - y / 10) as isize, &(x % 256, y % 256, (x + y) % 256))?;
+        }
+    }
+
+    line_pic.save_as_file("lines.ppm")?;
+    
+    */
+
     Ok(())
 }
