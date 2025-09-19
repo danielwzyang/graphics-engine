@@ -40,9 +40,9 @@ impl Picture {
         Ok(())
     }
 
-    pub fn plot(&mut self, x: usize, y: usize, color: (usize, usize, usize)) -> io::Result<()> {
+    pub fn plot(&mut self, x: usize, y: usize, color: &(usize, usize, usize)) -> io::Result<()> {
         // set color
-        self.data[y][x] = color;
+        self.data[(self.yres - 1) - y][x] = (color.0, color.1, color.2);
 
         // everthing went well
         Ok(())
