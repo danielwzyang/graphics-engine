@@ -31,7 +31,7 @@ fn main() -> Result<(), Box<dyn Error>> {
     test_pic.draw_line(0, yres/2, xres-1, yres/2, &colors::YELLOW)?;
     test_pic.draw_line(xres/2, 0, xres/2, yres-1, &colors::YELLOW)?;
 
-    test_pic.save("test.ppm")?;
+    test_pic.save_as_file("test.ppm")?;
 
     Ok(())
 }

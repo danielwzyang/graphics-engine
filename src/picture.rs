@@ -21,7 +21,7 @@ impl Picture {
         }
     }
 
-    pub fn save(&self, filename: &str) -> io::Result<()> {
+    pub fn save_as_file(&self, filename: &str) -> io::Result<()> {
         // create file
         let mut pic_file = File::create(filename)?;
 
@@ -35,6 +35,8 @@ impl Picture {
                 writeln!(pic_file, "{} {} {}\n", r, g, b)?;
             }
         }
+
+        println!("Image file created: {}", filename);
 
         // everything went well return ok
         Ok(())
