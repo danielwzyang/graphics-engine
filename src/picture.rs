@@ -68,10 +68,9 @@ impl Picture {
         // 0 <= |m| <= 1
         let small_slope = dy <= dx;
 
-        // if |m| > 1 then it's as if we're swapping x and y (reflection over y = x)
         // a and b derived from line equation Ax + By + C
         // imagine d as the cumulative error as we move through the line
-        let mut d = if small_slope { a + b / 2 } else { a / 2 + b };
+        let mut d = a + b / 2;
 
         if small_slope {
             // there is at least one pixel for every x value for small slope
