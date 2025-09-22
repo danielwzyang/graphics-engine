@@ -59,7 +59,7 @@ impl Picture {
         let step_x = if x1 > x0 { 1 } else { -1 };
         // if down to up then ++ otherwise --
         let step_y = if y1 > y0 { 1 } else { -1 };
-        // ^^ these make it so 
+        // ^^ these make it so it can move in multi directions
 
         // using dx and dy instead of y1 - y0 and x1 - x0 so it works for all octants
         let a = 2 * dy;
