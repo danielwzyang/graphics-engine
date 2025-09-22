@@ -70,6 +70,7 @@ impl Picture {
 
         // if |m| > 1 then it's as if we're swapping x and y (reflection over y = x)
         // a and b derived from line equation Ax + By + C
+        // imagine d as the cumulative error as we move through the line
         let mut d = if small_slope { a + b / 2 } else { a / 2 + b };
 
         if small_slope {
@@ -77,11 +78,16 @@ impl Picture {
             while x0 != x1 {
                 self.plot(x0 as usize, y0 as usize, &color)?;
 
+                // the y value needs to be stepped when we "fall below" the line
+                // it's not actually falling below the line for all octants,
+                // but because we use absolute value it treats the case as if it were in octant 1
+                // because b is a negative value, we only add b if d is positive to get it closer to 0
                 if d > 0 {
                     y0 += step_y;
                     d += b;
                 }
 
+                // since |m| falls between 0 and 1 we know we always step x
                 x0 += step_x;
                 d += a;
             }
@@ -90,11 +96,14 @@ impl Picture {
             while y0 != y1 {
                 self.plot(x0 as usize, y0 as usize, &color)?;
 
+                // a similar idea here where the x value needs to be stepped if we are "on the left"
+                // a is a positive value, so we only add a if d is negative to get it closer to 0
                 if d < 0 {
                     x0 += step_x;
                     d += a;
                 }
 
+                // we always step y
                 y0 += step_y;
                 d += b;
             }
