@@ -26,13 +26,13 @@ impl Picture {
         let mut pic_file = File::create(filename)?;
 
         // write header
-        writeln!(pic_file, "P3 {} {} {}\n", self.xres, self.yres, self.max_color)?;
+        writeln!(pic_file, "P3 {} {} {}", self.xres, self.yres, self.max_color)?;
 
         // loop through data and write into file
         // take data as reference since we don't need ownership (just reading values)
         for row in &self.data {
             for &(r, g, b) in row {
-                writeln!(pic_file, "{} {} {}\n", r, g, b)?;
+                writeln!(pic_file, "{} {} {}", r, g, b)?;
             }
         }
 
