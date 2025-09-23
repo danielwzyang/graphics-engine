@@ -1,6 +1,3 @@
 default:
 	cargo run
-
-display:
-	cargo run
-	display *.ppm
+	display test.ppm
