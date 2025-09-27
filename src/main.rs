@@ -15,7 +15,7 @@ fn main() -> Result<(), Box<dyn Error>> {
 
     println!();
 
-    println!("Testing ident. m1 = ");
+    println!("Testing ident. m1 =");
 
     let m1 = Matrix::identity();
 
@@ -35,7 +35,7 @@ fn main() -> Result<(), Box<dyn Error>> {
     m1.add_edge((1, 2, 3), (4, 5, 6));
     m1.add_edge((7, 8, 9), (10, 11, 12));
 
-    println!("Testing Matrix mult. m1=");
+    println!("Testing Matrix mult. m1 =");
 
     m1.print();
 
@@ -73,7 +73,7 @@ fn main() -> Result<(), Box<dyn Error>> {
 
     edges.render_edges(&mut picture, &colors::WHITE)?;
 
-    picture.draw_line(200, 340, 200, 320, &colors::MAGENTA)?;
+    picture.save_as_file("test.ppm")?;
 
     Ok(())
 }
