@@ -1,57 +1,51 @@
 mod picture;
 mod colors;
-use crate::picture::{Picture};
+mod matrix;
+use crate::matrix::Matrix;
+//use crate::picture::{Picture};
 use std::error::Error;
 
 fn main() -> Result<(), Box<dyn Error>> {
-    let mut test_pic = Picture::new(500, 500, 255);
+    println!("Testing add_edge. Adding (1, 2, 3), (4, 5, 6) m2 =");
 
-    let xres = 500;
-    let yres = 500;
+    let mut m2 = Matrix::new();
 
-    // octants 1, 5
-    test_pic.draw_line(0, 0, xres-1, yres-1, &colors::GREEN)?;
-    test_pic.draw_line(0, 0, xres-1, yres/2, &colors::GREEN)?;
-    test_pic.draw_line(xres-1, yres-1, 0, yres/2, &colors::GREEN)?;
+    m2.add_edge((1.0, 2.0, 3.0), (4.0, 5.0, 6.0));
 
-    // octants 8, 4
-    test_pic.draw_line(0, yres-1, xres-1, 0, &colors::CYAN)?;
-    test_pic.draw_line(0, yres-1, xres-1, yres/2, &colors::CYAN)?;
-    test_pic.draw_line(xres-1, 0, 0, yres/2, &colors::CYAN)?;
+    m2.print();
 
-    // octants 2, 6
-    test_pic.draw_line(0, 0, xres/2, yres-1, &colors::RED)?;
-    test_pic.draw_line(xres-1, yres-1, xres/2, 0, &colors::RED)?;
+    println!();
 
-    // octants 7, 3
-    test_pic.draw_line(0, yres-1, xres/2, 0, &colors::MAGENTA)?;
-    test_pic.draw_line(xres-1, 0, xres/2, yres-1, &colors::MAGENTA)?;
+    println!("Testing ident. m1 = ");
 
-    // horizontal and vertical
-    test_pic.draw_line(0, yres/2, xres-1, yres/2, &colors::YELLOW)?;
-    test_pic.draw_line(xres/2, 0, xres/2, yres-1, &colors::YELLOW)?;
+    let m1 = Matrix::identity();
 
-    test_pic.save_as_file("test.ppm")?;
+    m1.print();
 
-    /*
-    
-    let mut line_pic = Picture::new(500, 500, 255);
+    println!();
 
-    for x in (0..line_pic.xres).step_by(10) {
-        for y in (0..line_pic.yres).step_by(10) {
-            line_pic.draw_line(x as isize, y as isize, (line_pic.xres - x / 10) as isize, (line_pic.yres - y / 10) as isize, &(x % 256, y % 256, (x + y) % 256))?;
-        }
-    }
+    println!("Testing Matrix mult. m1 * m2 =");
 
-    for y in (5..line_pic.yres).step_by(10) {
-        for x in (5..line_pic.xres).step_by(10) {
-            line_pic.draw_line(x as isize, y as isize, (line_pic.xres - x / 10) as isize, (line_pic.yres - y / 10) as isize, &(x % 256, y % 256, (x + y) % 256))?;
-        }
-    }
+    m2 = Matrix::multiply(&m1, &m2);
+    m2.print();
 
-    line_pic.save_as_file("lines.ppm")?;
-    
-    */
+    println!();
+
+    let mut m1 = Matrix::new();
+
+    m1.add_edge((1.0, 2.0, 3.0), (4.0, 5.0, 6.0));
+    m1.add_edge((7.0, 8.0, 9.0), (10.0, 11.0, 12.0));
+
+    println!("Testing Matrix mult. m1=");
+
+    m1.print();
+
+    println!();
+
+    println!("Testing Matrix mult. m1 * m2 =");
+
+    m1 = Matrix::multiply(&m1, &m2);
+    m1.print();
 
     Ok(())
 }

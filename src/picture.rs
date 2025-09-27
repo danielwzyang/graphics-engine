@@ -1,5 +1,8 @@
+#![allow(dead_code)] 
+
 use std::fs::File;
-use std::io::{self, Write};
+use std::io::Write;
+use std::error::Error;
 
 pub struct Picture {
     pub xres: usize,
@@ -21,7 +24,7 @@ impl Picture {
         }
     }
 
-    pub fn save_as_file(&self, filename: &str) -> io::Result<()> {
+    pub fn save_as_file(&self, filename: &str) -> Result<(), Box<dyn Error>> {
         // create file
         let mut pic_file = File::create(filename)?;
 
@@ -42,7 +45,7 @@ impl Picture {
         Ok(())
     }
 
-    pub fn plot(&mut self, x: usize, y: usize, color: &(usize, usize, usize)) -> io::Result<()> {
+    pub fn plot(&mut self, x: usize, y: usize, color: &(usize, usize, usize)) -> Result<(), Box<dyn Error>> {
         // set color
         self.data[(self.yres - 1) - y][x] = (color.0, color.1, color.2);
 
@@ -50,7 +53,7 @@ impl Picture {
         Ok(())
     }
 
-    pub fn draw_line(&mut self, mut x0: isize, mut y0: isize, x1: isize, y1: isize, color: &(usize, usize, usize)) -> io::Result<()> {
+    pub fn draw_line(&mut self, mut x0: isize, mut y0: isize, x1: isize, y1: isize, color: &(usize, usize, usize)) -> Result<(), Box<dyn Error>> {
         // using absolute value to make it case insensitive for the different octants
         let dx = (x1 - x0).abs();
         let dy = (y1 - y0).abs();
