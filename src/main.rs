@@ -48,32 +48,35 @@ fn main() -> Result<(), Box<dyn Error>> {
 
     println!();
 
-    let mut edges = Matrix::new();
-
-    edges.add_edge((50.0, 450.0, 0.0), (100.0, 450.0, 0.0));
-    edges.add_edge((50.0, 450.0, 0.0), (50.0, 400.0, 0.0));
-    edges.add_edge((100.0, 450.0, 0.0), (100.0, 400.0, 0.0));
-    edges.add_edge((100.0, 400.0, 0.0), (50.0, 400.0, 0.0));
-
-    edges.add_edge((200.0, 450.0, 0.0), (250.0, 450.0, 0.0));
-    edges.add_edge((200.0, 450.0, 0.0), (200.0, 400.0, 0.0));
-    edges.add_edge((250.0, 450.0, 0.0), (250.0, 400.0, 0.0));
-    edges.add_edge((250.0, 400.0, 0.0), (200.0, 400.0, 0.0));
-
-    edges.add_edge((150.0, 400.0, 0.0), (130.0, 360.0, 0.0));
-    edges.add_edge((150.0, 400.0, 0.0), (170.0, 360.0, 0.0));
-    edges.add_edge((130.0, 360.0, 0.0), (170.0, 360.0, 0.0));
-
-    edges.add_edge((100.0, 340.0, 0.0), (200.0, 340.0, 0.0));
-    edges.add_edge((100.0, 320.0, 0.0), (200.0, 320.0, 0.0));
-    edges.add_edge((100.0, 340.0, 0.0), (100.0, 320.0, 0.0));
-    edges.add_edge((200.0, 340.0, 0.0), (200.0, 320.0, 0.0)); 
-
-    edges.rotation(matrix::Rotation::Z, -0.5);
-
     let mut picture = Picture::new(500, 500, 255);
 
-    edges.render_edges(&mut picture, &colors::WHITE)?;
+    let mut edges = Matrix::new();
+
+    let mut theta = 0.0;
+    let theta_step = 0.25;
+    let size = 10.0
+
+    for i in 0..20 {
+        let p1 = (-((i as f32) * theta_step), ((i as f32) * theta_step), 0.0);
+        let p2 = (((i as f32) * theta_step), ((i as f32) * theta_step), 0.0);
+        let p3 = (((i as f32) * theta_step), -((i as f32) * theta_step), 0.0);
+        let p4 = (-((i as f32) * theta_step), -((i as f32) * theta_step), 0.0);
+
+        edges.add_edge(p1, p2);
+        edges.add_edge(p2, p3);
+        edges.add_edge(p3, p4);
+        edges.add_edge(p4, p1);
+
+        edges.rotate(matrix::Rotation::Z, theta);
+        edges.translate(250.0, 250.0, 0.0);
+        edges.render_edges(&mut picture, &colors::MAGENTA);
+        edges = Matrix::new();
+
+        theta += theta_step;
+    }
+
+    edges.render_edges(&mut picture, &colors::MAGENTA)?;
+
 
     picture.save_as_file("test.ppm")?;
 

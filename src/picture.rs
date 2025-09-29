@@ -43,7 +43,7 @@ impl Picture {
         Ok(())
     }
 
-    pub fn plot(&mut self, x: usize, y: usize, color: &(usize, usize, usize)) -> Result<(), Box<dyn Error>> {
+    fn plot(&mut self, x: usize, y: usize, color: &(usize, usize, usize)) -> Result<(), Box<dyn Error>> {
         // set color
         self.data[(self.yres - 1) - y][x] = (color.0, color.1, color.2);
 

@@ -1,4 +1,4 @@
-#![allow(dead_code)] 
+#![allow(dead_code)]
 
 use crate::picture::Picture;
 use std::error::Error;
@@ -62,7 +62,7 @@ impl Matrix {
         }
     }
 
-    pub fn add_point(&mut self, x: f32, y: f32, z: f32, w: f32) {
+    fn add_point(&mut self, x: f32, y: f32, z: f32, w: f32) {
         self.data.push([x, y, z, w]);
     }
 
@@ -82,7 +82,7 @@ impl Matrix {
 
     pub fn translate(&mut self, a: f32, b: f32, c: f32) {
         let mut transformation_matrix = Matrix::identity();
-        
+
         // x, y, and z of last point are a, b, and c
         /*
             1 0 0 a
@@ -100,7 +100,7 @@ impl Matrix {
 
     pub fn dilate(&mut self, a: f32, b: f32, c: f32) {
         let mut transformation_matrix = Matrix::identity();
-        
+
         // 1s are replaced by a, b, and c
         /*
             a 0 0 0
@@ -116,9 +116,9 @@ impl Matrix {
         Matrix::multiply(&transformation_matrix, self)
     }
 
-    pub fn rotation(&mut self, axis: Rotation, theta: f32) {
+    pub fn rotate(&mut self, axis: Rotation, theta: f32) {
         let mut transformation_matrix = Matrix::identity();
-        
+
         match axis {
             Rotation::Z => {
                 /*
@@ -127,13 +127,13 @@ impl Matrix {
                     0 0 1 0
                     0 0 0 1
                 */
-                
-                transformation_matrix.data[0][0] = f32::cos(theta);
-                transformation_matrix.data[0][1] = f32::sin(theta);
-                transformation_matrix.data[1][0] = -f32::sin(theta);
-                transformation_matrix.data[1][1] = f32::cos(theta);
+
+                transformation_matrix.data[0][0] = theta.cos();
+                transformation_matrix.data[0][1] = theta.sin();
+                transformation_matrix.data[1][0] = -theta.sin();
+                transformation_matrix.data[1][1] = theta.cos();
             }
-            
+
             Rotation::X => {
                 /*
                     1 0 0 0
@@ -142,11 +142,11 @@ impl Matrix {
                     0 0 0 1
                 */
 
-                transformation_matrix.data[1][1] = f32::cos(theta);
-                transformation_matrix.data[1][2] = f32::sin(theta);
-                transformation_matrix.data[2][1] = -f32::sin(theta);
-                transformation_matrix.data[2][2] = f32::cos(theta);
-            } 
+                transformation_matrix.data[1][1] = theta.cos();
+                transformation_matrix.data[1][2] = theta.sin();
+                transformation_matrix.data[2][1] = -theta.sin();
+                transformation_matrix.data[2][2] = theta.cos();
+            }
 
             Rotation::Y => {
                 /*
@@ -156,13 +156,13 @@ impl Matrix {
                     0 0 0 1
                 */
 
-                transformation_matrix.data[0][0] = f32::cos(theta);
-                transformation_matrix.data[0][2] = -f32::sin(theta);
-                transformation_matrix.data[2][0] = f32::sin(theta);
-                transformation_matrix.data[2][2] = f32::cos(theta);
+                transformation_matrix.data[0][0] = theta.cos();
+                transformation_matrix.data[0][2] = -theta.sin();
+                transformation_matrix.data[2][0] = theta.sin();
+                transformation_matrix.data[2][2] = theta.cos();
             }
         }
 
         Matrix::multiply(&transformation_matrix, self)
     }
-} 
+}
