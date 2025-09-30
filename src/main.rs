@@ -75,9 +75,6 @@ fn main() -> Result<(), Box<dyn Error>> {
         theta += theta_step;
     }
 
-    edges.render_edges(&mut picture, &colors::MAGENTA)?;
-
-
     picture.save_as_file("test.ppm")?;
 
     Ok(())
