@@ -167,10 +167,17 @@ impl Matrix {
 
     fn run_parametric<X, Y>(&mut self, x: X, y: Y, steps: f32)
         where X: Fn(f32) -> f32, Y: Fn(f32) -> f32, {
+        // we can use parametric equations for things like circles and splines
+        // t = 0
+        // t -> 1
+        // x and y have their own functions of t
         let mut t: f32 = 0.0;
-        let t_step = 1.0/steps;
+        let t_step = 1.0 / steps;
+
+        // we need to store this so we can draw edges between consecutive points
         let mut last_point = (x(t), y(t), 0.0);
 
+        // t -> 1
         while t <= 1.0 {
             t += t_step;
             let current_point = (x(t), y(t), 0.0);
@@ -185,6 +192,8 @@ impl Matrix {
     }
 
     pub fn add_circle(&mut self, center: (f32, f32), r: f32, steps: f32) {
+        // x(t) = rcos(2 * pi * t) + cx
+        // y(t) = rsin(2 * pi * t) + cy
         let x = |t: f32| r * (2.0 * PI * t).cos() + center.0;
         let y = |t: f32| r * (2.0 * PI * t).sin() + center.1;
 
