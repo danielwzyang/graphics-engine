@@ -43,15 +43,11 @@ impl Picture {
         Ok(())
     }
 
-    fn plot(&mut self, x: usize, y: usize, color: &(usize, usize, usize)) -> Result<(), Box<dyn Error>> {
-        // set color
+    fn plot(&mut self, x: usize, y: usize, color: &(usize, usize, usize)) {
         self.data[(self.yres - 1) - y][x] = (color.0, color.1, color.2);
-
-        // everthing went well
-        Ok(())
     }
 
-    pub fn draw_line(&mut self, mut x0: isize, mut y0: isize, x1: isize, y1: isize, color: &(usize, usize, usize)) -> Result<(), Box<dyn Error>> {
+    pub fn draw_line(&mut self, mut x0: isize, mut y0: isize, x1: isize, y1: isize, color: &(usize, usize, usize)) {
         // using absolute value to make it case insensitive for the different octants
         let dx = (x1 - x0).abs();
         let dy = (y1 - y0).abs();
@@ -76,7 +72,7 @@ impl Picture {
         if small_slope {
             // there is at least one pixel for every x value for small slope
             while x0 != x1 {
-                self.plot(x0 as usize, y0 as usize, &color)?;
+                self.plot(x0 as usize, y0 as usize, &color);
 
                 // the y value needs to be stepped when we "fall below" the line
                 // it's not actually falling below the line for all octants,
@@ -94,7 +90,7 @@ impl Picture {
         } else {
             // there is at least one pixel for every y value for small slope
             while y0 != y1 {
-                self.plot(x0 as usize, y0 as usize, &color)?;
+                self.plot(x0 as usize, y0 as usize, &color);
 
                 // a similar idea here where the x value needs to be stepped if we are "on the left"
                 // a is a positive value, so we only add a if d is negative to get it closer to 0
@@ -108,7 +104,5 @@ impl Picture {
                 d += b;
             }
         }
-
-        Ok(())
     }
 }

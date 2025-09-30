@@ -1,7 +1,8 @@
 #![allow(dead_code)]
 
-use crate::picture::Picture;
-use std::error::Error;
+use crate::{picture::Picture};
+
+const PI: f32 = 3.1415;
 
 pub struct Matrix {
     data: Vec<[f32; 4]>
@@ -71,13 +72,11 @@ impl Matrix {
         self.add_point(point2.0, point2.1, point2.2, 1.0);
     }
 
-    pub fn render_edges(self, picture: &mut Picture, color: &(usize, usize, usize)) -> Result<(), Box<dyn Error>> {
+    pub fn render_edges(self, picture: &mut Picture, color: &(usize, usize, usize)) {
         for edge in self.data.chunks(2) {
             // loop through in pairs
-            picture.draw_line(edge[0][0] as isize, edge[0][1] as isize, edge[1][0] as isize, edge[1][1] as isize, &color)?;
+            picture.draw_line(edge[0][0] as isize, edge[0][1] as isize, edge[1][0] as isize, edge[1][1] as isize, &color);
         }
-
-        Ok(())
     }
 
     pub fn translate(&mut self, a: f32, b: f32, c: f32) {
@@ -164,5 +163,31 @@ impl Matrix {
         }
 
         Matrix::multiply(&transformation_matrix, self)
+    }
+
+    fn run_parametric<X, Y>(&mut self, x: X, y: Y, steps: f32)
+        where X: Fn(f32) -> f32, Y: Fn(f32) -> f32, {
+        let mut t: f32 = 0.0;
+        let t_step = 1.0/steps;
+        let mut last_point = (x(t), y(t), 0.0);
+
+        while t <= 1.0 {
+            t += t_step;
+            let current_point = (x(t), y(t), 0.0);
+
+            self.add_edge(
+                last_point,
+                current_point,
+            );
+
+            last_point = current_point;
+        }
+    }
+
+    pub fn add_circle(&mut self, center: (f32, f32), r: f32, steps: f32) {
+        let x = |t: f32| r * (2.0 * PI * t).cos() + center.0;
+        let y = |t: f32| r * (2.0 * PI * t).sin() + center.1;
+
+        self.run_parametric(x, y, steps);
     }
 }
