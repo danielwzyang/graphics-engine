@@ -48,19 +48,19 @@ fn main() -> Result<(), Box<dyn Error>> {
 
     println!();
 
-    let mut picture = Picture::new(500, 500, 255);
+    let mut picture = Picture::new(500, 500, 255, &colors::BLACK);
 
     let mut edges = Matrix::new();
 
-    let mut theta = 0.0;
-    let theta_step = 0.25;
-    let size = 10.0
+    let mut theta = 0.2;
+    let theta_step = 0.15;
+    let size_step = 5.0;
 
-    for i in 0..20 {
-        let p1 = (-((i as f32) * theta_step), ((i as f32) * theta_step), 0.0);
-        let p2 = (((i as f32) * theta_step), ((i as f32) * theta_step), 0.0);
-        let p3 = (((i as f32) * theta_step), -((i as f32) * theta_step), 0.0);
-        let p4 = (-((i as f32) * theta_step), -((i as f32) * theta_step), 0.0);
+    for i in 0..30 {
+        let p1 = (-((i as f32 + 1.0) * size_step), ((i as f32 + 1.0) * size_step), 0.0);
+        let p2 = (((i as f32 + 1.0) * size_step), ((i as f32 + 1.0) * size_step), 0.0);
+        let p3 = (((i as f32 + 1.0) * size_step), -((i as f32 + 1.0) * size_step), 0.0);
+        let p4 = (-((i as f32 + 1.0) * size_step), -((i as f32 + 1.0) * size_step), 0.0);
 
         edges.add_edge(p1, p2);
         edges.add_edge(p2, p3);
@@ -69,7 +69,7 @@ fn main() -> Result<(), Box<dyn Error>> {
 
         edges.rotate(matrix::Rotation::Z, theta);
         edges.translate(250.0, 250.0, 0.0);
-        edges.render_edges(&mut picture, &colors::MAGENTA);
+        edges.render_edges(&mut picture, &colors::RAINBOW[i % 6])?;
         edges = Matrix::new();
 
         theta += theta_step;

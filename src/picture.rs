@@ -11,9 +11,9 @@ pub struct Picture {
 
 impl Picture {
     // constructor
-    pub fn new(xres: usize, yres: usize, max_color: usize) -> Picture {
+    pub fn new(xres: usize, yres: usize, max_color: usize, default_color: &(usize, usize, usize)) -> Picture {
         // using vectors to save space + possibly unknown res at compile time
-        let data = vec![vec![(0, 0, 0); xres]; yres];
+        let data = vec![vec![default_color.clone(); xres]; yres];
         Picture {
             xres,
             yres,
