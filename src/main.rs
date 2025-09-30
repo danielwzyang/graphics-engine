@@ -56,7 +56,7 @@ fn main() -> Result<(), Box<dyn Error>> {
     let theta_step = 0.15;
     let size_step = 5.0;
 
-    for i in 0..30 {
+    for i in 0..33 {
         let p1 = (-((i as f32 + 1.0) * size_step), ((i as f32 + 1.0) * size_step), 0.0);
         let p2 = (((i as f32 + 1.0) * size_step), ((i as f32 + 1.0) * size_step), 0.0);
         let p3 = (((i as f32 + 1.0) * size_step), -((i as f32 + 1.0) * size_step), 0.0);
