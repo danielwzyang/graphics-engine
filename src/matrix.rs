@@ -67,9 +67,9 @@ impl Matrix {
         self.data.push([x, y, z, w]);
     }
 
-    pub fn add_edge(&mut self, point1: (f32, f32, f32), point2: (f32, f32, f32)) {
-        self.add_point(point1.0, point1.1, point1.2, 1.0);
-        self.add_point(point2.0, point2.1, point2.2, 1.0);
+    pub fn add_edge(&mut self, x0: f32, y0: f32, z0: f32, x1: f32, y1: f32, z1: f32) {
+        self.add_point(x0, y0, z0, 1.0);
+        self.add_point(x1, y1, z1, 1.0);
     }
 
     pub fn render_edges(self, picture: &mut Picture, color: &(usize, usize, usize)) {
@@ -183,20 +183,24 @@ impl Matrix {
             let current_point = (x(t), y(t), 0.0);
 
             self.add_edge(
-                last_point,
-                current_point,
+                last_point.0, last_point.1, last_point.2,
+                current_point.0, current_point.1, current_point.2,
             );
 
             last_point = current_point;
         }
     }
 
-    pub fn add_circle(&mut self, center: (f32, f32), r: f32, steps: f32) {
+    pub fn add_circle(&mut self, cx: f32, cy: f32, r: f32, steps: f32) {
         // x(t) = rcos(2 * pi * t) + cx
         // y(t) = rsin(2 * pi * t) + cy
-        let x = |t: f32| r * (2.0 * PI * t).cos() + center.0;
-        let y = |t: f32| r * (2.0 * PI * t).sin() + center.1;
+        let x = |t: f32| r * (2.0 * PI * t).cos() + cx;
+        let y = |t: f32| r * (2.0 * PI * t).sin() + cy;
 
         self.run_parametric(x, y, steps);
     }
+
+    pub fn add_hermite_curve(&mut self, x0: f32, y0: f32, x1: f32, y1: f32, r0: f32, r1: f32) {
+        
+    } 
 }

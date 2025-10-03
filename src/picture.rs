@@ -44,6 +44,11 @@ impl Picture {
     }
 
     fn plot(&mut self, x: usize, y: usize, color: &(usize, usize, usize)) {
+        // ignore pixels out of bounds
+        if y >= self.yres || x >= self.xres {
+            return;
+        }
+
         self.data[(self.yres - 1) - y][x] = (color.0, color.1, color.2);
     }
 
