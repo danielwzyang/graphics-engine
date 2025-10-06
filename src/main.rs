@@ -3,13 +3,13 @@ use std::fs::File;
 use std::io::{self, BufRead};
 use std::path::Path;
 use std::env;
-use std::process::Command;
 
 mod picture;
 mod colors;
 mod matrix;
 use crate::{matrix::Matrix, picture::Picture};
 
+#[show_image::main]
 fn main() -> Result<(), Box<dyn Error>> {
     let mut picture = Picture::new(500, 500, 255, &colors::BLACK);
 
@@ -25,8 +25,7 @@ fn main() -> Result<(), Box<dyn Error>> {
 
     if let Ok(lines) = read_lines(path) {
         // create an iterator to read through lines
-        let mut iterator = lines.map_while(Result::ok).map(|s| s.trim().to_string()).peekable();
-        let mut current_line = 1;
+        let mut iterator = lines.map_while(Result::ok);
 
         // while iterator has valid item
         while let Some(command) = iterator.next() {
@@ -38,24 +37,16 @@ fn main() -> Result<(), Box<dyn Error>> {
             // match commands
             match command.as_str() {
                 "line" => {
-                    if let Some(arguments) = iterator.next() {
-                        current_line += 1;
-                        let parts: Vec<&str> = arguments.split_whitespace().collect();
-                        if parts.len() >= 6 {
-                            match (
-                                parts[0].parse::<f32>(), parts[1].parse::<f32>(), parts[2].parse::<f32>(), parts[3].parse::<f32>(), parts[4].parse::<f32>(), parts[5].parse::<f32>()
-                            ) {
-                                (Ok(x0), Ok(y0), Ok(z0), Ok(x1), Ok(y1), Ok(z1)) => {
-                                    edges.add_edge(x0, y0, z0, x1, y1, z1);
-                                }
-                                _ => eprintln!("{}:{} -> Invalid numbers for 'line' arguments: {}", path, current_line, arguments),
-                            }
-                        } else {
-                            eprintln!("{}:{} -> Not enough arguments for 'line' (expected 6): {}", path, current_line, arguments);
-                        }
-                    } else { 
-                        eprintln!("{}:{} -> Missing arguments for 'line' command.", path, current_line); 
-                    }
+                    let arguments = iterator.next().unwrap();
+                    let parts: Vec<&str> = arguments.split_whitespace().collect();
+                    edges.add_edge(
+                        parts[0].parse::<f32>()?,
+                        parts[1].parse::<f32>()?,
+                        parts[2].parse::<f32>()?,
+                        parts[3].parse::<f32>()?,
+                        parts[4].parse::<f32>()?,
+                        parts[5].parse::<f32>()?,
+                    );
                 }
 
                 "ident" => {
@@ -63,49 +54,36 @@ fn main() -> Result<(), Box<dyn Error>> {
                 }
 
                 "scale" => {
-                    if let Some(arguments) = iterator.next() {
-                        current_line += 1;
-                        let parts: Vec<&str> = arguments.split_whitespace().collect();
-                        if parts.len() >= 3 {
-                            match (parts[0].parse::<f32>(), parts[1].parse::<f32>(), parts[2].parse::<f32>()) {
-                                (Ok(a), Ok(b), Ok(c)) => transformation_matrix.dilate(a, b, c),
-                                _ => eprintln!("{}:{} -> Invalid numbers for 'dilate' arguments: {}", path, current_line, arguments),
-                            }
-                        } else { eprintln!("{}:{} -> Not enough arguments for 'dilate' (expected 3): {}", path, current_line, arguments); }
-                    } else { eprintln!("{}:{} -> Missing arguments for 'dilate' command", path, current_line); }
+                    let arguments = iterator.next().unwrap();
+                    let parts: Vec<&str> = arguments.split_whitespace().collect();
+                    transformation_matrix.dilate(
+                        parts[0].parse::<f32>()?,
+                        parts[1].parse::<f32>()?,
+                        parts[2].parse::<f32>()?,
+                    );
                 }
 
                 "move" => {
-                    if let Some(arguments) = iterator.next() {
-                        current_line += 1;
-                        let parts: Vec<&str> = arguments.split_whitespace().collect();
-                        if parts.len() >= 3 {
-                            match (parts[0].parse::<f32>(), parts[1].parse::<f32>(), parts[2].parse::<f32>()) {
-                                (Ok(a), Ok(b), Ok(c)) => transformation_matrix.translate(a, b, c),
-                                _ => eprintln!("{}:{} -> Invalid numbers for 'translate' arguments: {}", path, current_line, arguments),
-                            }
-                        } else { eprintln!("{}:{} -> Not enough arguments for 'translate' (expected 3): {}", path, current_line, arguments); }
-                    } else { eprintln!("{}:{} -> Missing arguments for 'translate' command", path, current_line); }
+                    let arguments = iterator.next().unwrap();
+                    let parts: Vec<&str> = arguments.split_whitespace().collect();
+                    transformation_matrix.translate(
+                        parts[0].parse::<f32>()?,
+                        parts[1].parse::<f32>()?,
+                        parts[2].parse::<f32>()?,
+                    );    
                 }
 
                 "rotate" => {
-                    if let Some(arguments) = iterator.next() {
-                        current_line += 1;
-                        let mut parts = arguments.split_whitespace();
-                        if let (Some(axis), Some(degrees)) = (parts.next(), parts.next()) {
-                            match degrees.parse::<f32>() {
-                                Ok(deg) => {
-                                    match axis.chars().next().map(|c| c.to_ascii_lowercase()) {
-                                        Some('x') => transformation_matrix.rotate(matrix::Rotation::X, deg),
-                                        Some('y') => transformation_matrix.rotate(matrix::Rotation::Y, deg),
-                                        Some('z') => transformation_matrix.rotate(matrix::Rotation::Z, deg),
-                                        _ => eprintln!("{}:{} -> Unknown axis for 'rotate': {}", path, current_line, axis),
-                                    }
-                                }
-                                Err(_) => eprintln!("{}:{} -> Invalid degrees for 'rotate': {}", path, current_line, degrees),
-                            }
-                        } else { eprintln!("{}:{} -> Invalid arguments for 'rotate' (expected <axis> <degrees>): {}", path, current_line, arguments); }
-                    } else { eprintln!("{}:{} -> Missing arguments for 'rotate' command", path, current_line); }
+                    let arguments = iterator.next().unwrap();
+                    let parts: Vec<&str> = arguments.split_whitespace().collect();
+                    transformation_matrix.rotate(
+                        match parts[0] {
+                            "x" => matrix::Rotation::X,
+                            "y" => matrix::Rotation::Y,
+                            _ => matrix::Rotation::Z
+                        },
+                        parts[1].parse::<f32>()?,
+                    ); 
                 }
 
                 "apply" => {
@@ -115,33 +93,18 @@ fn main() -> Result<(), Box<dyn Error>> {
                 "display" => {
                     picture.clear();
                     edges.render_edges(&mut picture, &colors::WHITE);
-
-                    if let Err(e) = picture.save_as_file("temp.ppm") {
-                        eprintln!("{}:{} -> Failed to display: {}", path, current_line, e);
-                    }
-
-                    println!("Waiting for display window to close to proceed...");
-
-                    Command::new("display")
-                        .args(["temp.ppm"])
-                        .output()?;
+                    picture.display()?;
                 }
 
                 "save" => {
-                    if let Some(arguments) = iterator.next() {
-                        current_line += 1;
-                        
-                        let filename = arguments.trim();
-                        picture.clear();
-                        edges.render_edges(&mut picture, &colors::WHITE);
-
-                        if let Err(e) = picture.save_as_file(filename) {
-                            eprintln!("{}:{} -> Failed to save {}: {}", path, current_line, filename, e);
-                        }
-                    } else { eprintln!("{}:{} -> Missing filename for 'save' command", path, current_line); }
+                    let arguments = iterator.next().unwrap();
+                    let filename = arguments.trim();
+                    picture.clear();
+                    edges.render_edges(&mut picture, &colors::WHITE);
+                    picture.save_as_file(filename)?;
                 }
 
-                other => eprintln!("{}:{} -> Unknown command: '{}'", path, current_line, other),
+                _ => {}
             }
         }
     }

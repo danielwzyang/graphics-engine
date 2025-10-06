@@ -1,9 +1,11 @@
+RUN ?= WINIT_UNIX_BACKEND=x11 cargo run
+
 default:
-	cargo run scripts/default
+	${RUN} scripts/default
 	display pic.png
 
 custom:
-	cargo run scripts/custom
+	${RUN} scripts/custom
 	display pic.png
 
 clean:

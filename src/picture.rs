@@ -1,7 +1,10 @@
 use std::fs::File;
 use std::io::Write;
 use std::error::Error;
-use std::process::Command;
+use std::path::Path;
+
+use image::{ImageBuffer, Rgb};
+use show_image::{create_window, ImageInfo, ImageView, WindowOptions};
 
 pub struct Picture {
     pub xres: usize,
@@ -30,28 +33,90 @@ impl Picture {
         self.data = vec![vec![self.default_color.clone(); self.xres]; self.yres];
     }
 
-    pub fn save_as_file(&self, filename: &str) -> Result<(), Box<dyn Error>> {
-        // create file
-        let mut pic_file = File::create("temp.ppm")?;
+    pub fn display(&self) -> Result<(), Box<dyn Error>> {
+        let mut buffer: ImageBuffer<Rgb<u8>, Vec<u8>> = ImageBuffer::new(self.xres as u32, self.yres as u32);
 
-        // write header
-        writeln!(pic_file, "P3 {} {} {}", self.xres, self.yres, self.max_color)?;
-
-        // loop through data and write into file
-        // take data as reference since we don't need ownership (just reading values)
-        for row in &self.data {
-            for &(r, g, b) in row {
-                writeln!(pic_file, "{} {} {}", r, g, b)?;
+        for (y, row) in self.data.iter().enumerate() {
+            for (x, &(r, g, b)) in row.iter().enumerate() {
+                let pixel = Rgb([r as u8, g as u8, b as u8]);
+                buffer.put_pixel(x as u32, y as u32, pixel);
             }
         }
 
-        Command::new("convert")
-            .args(["temp.ppm", filename])
-            .output()?;
+        // convert the buffer to raw bytes (RGB8 format)
+        let bytes = buffer.into_raw();
 
-        println!("{} created.", filename);
+        // create imageview
+        let image = ImageView::new(
+            ImageInfo::rgb8(self.xres as u32, self.yres as u32),
+            &bytes,
+        );
 
-        // everything went well return ok
+        // create window
+        let window = create_window("Preview", WindowOptions {
+            size: Some([self.xres as u32, self.yres as u32]),
+            ..Default::default()
+        })?;
+
+        window.set_image("image", image)?;
+
+        // keep the window open until manually closed
+        window.wait_until_destroyed()?;
+
+        Ok(())
+    }
+
+
+    pub fn save_as_file(&self, filename: &str) -> Result<(), Box<dyn Error>> {
+        let extension = Path::new(filename)
+            .extension()
+            .and_then(|s| s.to_str())
+            .unwrap_or("")
+            .to_ascii_lowercase();
+
+        match extension.as_str() {
+            "ppm" => {
+                self.save_ppm(filename)?;
+                println!("{} created.", filename);
+                Ok(())
+            }
+            "png" => {
+                self.save_png(filename)?;
+                println!("{} created.", filename);
+                Ok(())
+            }
+            _ => {
+                return Err(format!("Cannot save file: .{} not supported.", extension).into());
+            }
+        }
+    }
+
+    fn save_ppm(&self, filename: &str) -> Result<(), Box<dyn Error>> {
+        let mut file = File::create(filename)?;
+
+        writeln!(file, "P3 {} {} {}", self.xres, self.yres, self.max_color)?;
+        
+        for row in &self.data {
+            for &(r, g, b) in row {
+                writeln!(file, "{} {} {}", r, g, b)?;
+            }
+        }
+
+        Ok(())
+    }
+
+    fn save_png(&self, filename: &str) -> Result<(), Box<dyn Error>> {
+        let mut buffer: ImageBuffer<Rgb<u8>, Vec<u8>> = ImageBuffer::new(self.xres as u32, self.yres as u32);
+
+        for (y, row) in self.data.iter().enumerate() {
+            for (x, &(r, g, b)) in row.iter().enumerate() {
+                let pixel = Rgb([r as u8, g as u8, b as u8]);
+                buffer.put_pixel(x as u32, y as u32, pixel);
+            }
+        }
+
+        buffer.save(filename)?;
+        
         Ok(())
     }
 
