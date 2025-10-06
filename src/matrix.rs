@@ -72,7 +72,7 @@ impl Matrix {
         self.add_point(x1, y1, z1, 1.0);
     }
 
-    pub fn render_edges(self, picture: &mut Picture, color: &(usize, usize, usize)) {
+    pub fn render_edges(&self, picture: &mut Picture, color: &(usize, usize, usize)) {
         for edge in self.data.chunks(2) {
             // loop through in pairs
             picture.draw_line(edge[0][0] as isize, edge[0][1] as isize, edge[1][0] as isize, edge[1][1] as isize, &color);

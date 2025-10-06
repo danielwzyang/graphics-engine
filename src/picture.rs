@@ -8,19 +8,26 @@ pub struct Picture {
     pub yres: usize,
     max_color: usize,
     data: Vec<Vec<(usize, usize, usize)>>,
+    default_color: (usize, usize, usize)
 }
 
 impl Picture {
     // constructor
     pub fn new(xres: usize, yres: usize, max_color: usize, default_color: &(usize, usize, usize)) -> Picture {
         // using vectors to save space + possibly unknown res at compile time
+        let default_color = default_color.clone();
         let data = vec![vec![default_color.clone(); xres]; yres];
         Picture {
             xres,
             yres,
             max_color,
-            data
+            data,
+            default_color,
         }
+    }
+
+    pub fn clear(&mut self) {
+        self.data = vec![vec![self.default_color.clone(); self.xres]; self.yres];
     }
 
     pub fn save_as_file(&self, filename: &str) -> Result<(), Box<dyn Error>> {
@@ -38,13 +45,11 @@ impl Picture {
             }
         }
 
-        println!("Temp image file created: temp.ppm");
-
         Command::new("convert")
             .args(["temp.ppm", filename])
             .output()?;
 
-        println!("temp.ppm converted to {}", filename);
+        println!("{} created.", filename);
 
         // everything went well return ok
         Ok(())
