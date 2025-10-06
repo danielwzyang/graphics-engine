@@ -200,8 +200,4 @@ impl Matrix {
 
         self.run_parametric(x, y, steps);
     }
-
-    pub fn add_hermite_curve(&mut self, x0: f32, y0: f32, x1: f32, y1: f32, r0: f32, r1: f32) {
-
-    }
 }
