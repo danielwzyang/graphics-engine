@@ -5,3 +5,7 @@ default:
 custom:
 	cargo run scripts/custom
 	display pic.png
+
+clean:
+	cargo clean
+	rm -rf *.ppm *.png
