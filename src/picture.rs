@@ -1,6 +1,7 @@
 use std::fs::File;
 use std::io::Write;
 use std::error::Error;
+use std::process::Command;
 
 pub struct Picture {
     pub xres: usize,
@@ -24,7 +25,7 @@ impl Picture {
 
     pub fn save_as_file(&self, filename: &str) -> Result<(), Box<dyn Error>> {
         // create file
-        let mut pic_file = File::create(filename)?;
+        let mut pic_file = File::create("temp.ppm")?;
 
         // write header
         writeln!(pic_file, "P3 {} {} {}", self.xres, self.yres, self.max_color)?;
@@ -37,7 +38,13 @@ impl Picture {
             }
         }
 
-        println!("Image file created: {}", filename);
+        println!("Temp image file created: temp.ppm");
+
+        Command::new("convert")
+            .args(["temp.ppm", filename])
+            .output()?;
+
+        println!("temp.ppm converted to {}", filename);
 
         // everything went well return ok
         Ok(())

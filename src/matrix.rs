@@ -2,7 +2,7 @@
 
 use crate::{picture::Picture};
 
-const PI: f32 = 3.1415;
+const PI: f32 = 3.14159;
 
 pub struct Matrix {
     data: Vec<[f32; 4]>
@@ -115,8 +115,9 @@ impl Matrix {
         Matrix::multiply(&transformation_matrix, self)
     }
 
-    pub fn rotate(&mut self, axis: Rotation, theta: f32) {
+    pub fn rotate(&mut self, axis: Rotation, degrees: f32) {
         let mut transformation_matrix = Matrix::identity();
+        let theta = degrees * (PI / 180.0);
 
         match axis {
             Rotation::Z => {
@@ -201,6 +202,6 @@ impl Matrix {
     }
 
     pub fn add_hermite_curve(&mut self, x0: f32, y0: f32, x1: f32, y1: f32, r0: f32, r1: f32) {
-        
-    } 
+
+    }
 }

@@ -1,3 +1,7 @@
 default:
-	cargo run
-	display test.ppm
+	cargo run scripts/default
+	display pic.png
+
+custom:
+	cargo run scripts/custom
+	display pic.png
