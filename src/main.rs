@@ -11,7 +11,7 @@ use crate::{matrix::Matrix, picture::Picture};
 
 #[show_image::main]
 fn main() -> Result<(), Box<dyn Error>> {
-    let mut picture = Picture::new(500, 500, 255, &colors::BLACK);
+    let mut picture = Picture::new(500, 500, 255, &colors::WHITE);
 
     let arguments: Vec<String> = env::args().collect();
     if arguments.len() < 2 {
@@ -92,7 +92,7 @@ fn main() -> Result<(), Box<dyn Error>> {
 
                 "display" => {
                     picture.clear();
-                    edges.render_edges(&mut picture, &colors::WHITE);
+                    edges.render_edges(&mut picture, &colors::MAGENTA);
                     picture.display()?;
                 }
 
@@ -100,11 +100,13 @@ fn main() -> Result<(), Box<dyn Error>> {
                     let arguments = iterator.next().unwrap();
                     let filename = arguments.trim();
                     picture.clear();
-                    edges.render_edges(&mut picture, &colors::WHITE);
+                    edges.render_edges(&mut picture, &colors::MAGENTA);
                     picture.save_as_file(filename)?;
                 }
 
-                _ => {}
+                unknown => {
+                    println!("Error parsing '{}'.", unknown);
+                }
             }
         }
     }

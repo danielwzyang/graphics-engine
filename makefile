@@ -4,8 +4,7 @@ default:
 	${RUN} scripts/default
 
 custom:
-	${RUN} scripts/custom
+	${RUN} scripts/dodecahedron
 
 clean:
-	cargo clean
 	rm -rf *.ppm *.png
