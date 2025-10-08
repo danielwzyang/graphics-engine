@@ -45,12 +45,12 @@ fn main() -> Result<(), Box<dyn Error>> {
                     }
 
                     edges.add_edge(
-                        parts[0].parse::<f32>()?,
-                        parts[1].parse::<f32>()?,
-                        parts[2].parse::<f32>()?,
-                        parts[3].parse::<f32>()?,
-                        parts[4].parse::<f32>()?,
-                        parts[5].parse::<f32>()?,
+                        convert_parameter::<f32>(parts[0], path, line_number + 1)?,
+                        convert_parameter::<f32>(parts[1], path, line_number + 1)?,
+                        convert_parameter::<f32>(parts[2], path, line_number + 1)?,
+                        convert_parameter::<f32>(parts[3], path, line_number + 1)?,
+                        convert_parameter::<f32>(parts[4], path, line_number + 1)?,
+                        convert_parameter::<f32>(parts[5], path, line_number + 1)?,
                     );
                 }
 
@@ -67,9 +67,9 @@ fn main() -> Result<(), Box<dyn Error>> {
                     }
 
                     transformation_matrix.dilate(
-                        parts[0].parse::<f32>()?,
-                        parts[1].parse::<f32>()?,
-                        parts[2].parse::<f32>()?,
+                        convert_parameter::<f32>(parts[0], path, line_number + 1)?,
+                        convert_parameter::<f32>(parts[1], path, line_number + 1)?,
+                        convert_parameter::<f32>(parts[2], path, line_number + 1)?,
                     );
                 }
 
@@ -82,9 +82,9 @@ fn main() -> Result<(), Box<dyn Error>> {
                     }
 
                     transformation_matrix.translate(
-                        parts[0].parse::<f32>()?,
-                        parts[1].parse::<f32>()?,
-                        parts[2].parse::<f32>()?,
+                        convert_parameter::<f32>(parts[0], path, line_number + 1)?,
+                        convert_parameter::<f32>(parts[1], path, line_number + 1)?,
+                        convert_parameter::<f32>(parts[2], path, line_number + 1)?,
                     );
                 }
 
@@ -102,7 +102,7 @@ fn main() -> Result<(), Box<dyn Error>> {
                             "y" => matrix::Rotation::Y,
                             _ => matrix::Rotation::Z // for simplicity assume rotation by z
                         },
-                        parts[1].parse::<f32>()?,
+                        convert_parameter::<f32>(parts[1], path, line_number + 1)?,
                     );
                 }
 
@@ -113,6 +113,7 @@ fn main() -> Result<(), Box<dyn Error>> {
                 "display" => {
                     picture.clear();
                     edges.render_edges(&mut picture, &colors::MAGENTA);
+                    println!("Waiting for display to close...");
                     picture.display()?;
                 }
 
@@ -143,4 +144,11 @@ fn read_lines<P>(filename: P) -> io::Result<io::Lines<io::BufReader<File>>>
 where P: AsRef<Path>, {
     let file = File::open(filename)?;
     Ok(io::BufReader::new(file).lines())
+}
+
+fn convert_parameter<T: std::str::FromStr>(parameter: &str, path: &str, line_number: usize) -> Result<T, Box<dyn Error>> {
+    match parameter.parse::<T>() {
+        Ok(value) => Ok(value),
+        _ => Err(format!("{}:{} -> Invalid parameter: {}", path, line_number, parameter).into()),
+    }
 }
