@@ -30,12 +30,15 @@ impl Picture {
     }
 
     pub fn clear(&mut self) {
+        // fill data with default color
         self.data = vec![vec![self.default_color.clone(); self.xres]; self.yres];
     }
 
     pub fn display(&self) -> Result<(), Box<dyn Error>> {
+        // create image buffer
         let mut buffer: ImageBuffer<Rgb<u8>, Vec<u8>> = ImageBuffer::new(self.xres as u32, self.yres as u32);
 
+        // fill buffer with pixels
         for (y, row) in self.data.iter().enumerate() {
             for (x, &(r, g, b)) in row.iter().enumerate() {
                 let pixel = Rgb([r as u8, g as u8, b as u8]);
@@ -58,6 +61,7 @@ impl Picture {
             ..Default::default()
         })?;
 
+        // use image buffer to set window
         window.set_image("image", image)?;
 
         // keep the window open until manually closed
@@ -69,10 +73,10 @@ impl Picture {
 
     pub fn save_as_file(&self, filename: &str) -> Result<(), Box<dyn Error>> {
         let extension = Path::new(filename)
-            .extension()
-            .and_then(|s| s.to_str())
-            .unwrap_or("")
-            .to_ascii_lowercase();
+            .extension() // get extension
+            .and_then(|s| s.to_str()) // convert to a string
+            .unwrap_or("") // if invalid string then default to empty string
+            .to_ascii_lowercase(); // to lowercase
 
         match extension.as_str() {
             "ppm" => {
@@ -85,6 +89,9 @@ impl Picture {
                 println!("{} created.", filename);
                 Ok(())
             }
+            "" => {
+                return Err(format!("Cannot save file: please provide a file extension.").into());
+            }
             _ => {
                 return Err(format!("Cannot save file: .{} not supported.", extension).into());
             }
@@ -94,8 +101,10 @@ impl Picture {
     fn save_ppm(&self, filename: &str) -> Result<(), Box<dyn Error>> {
         let mut file = File::create(filename)?;
 
+        // ppm header
         writeln!(file, "P3 {} {} {}", self.xres, self.yres, self.max_color)?;
-        
+
+        // input rgb
         for row in &self.data {
             for &(r, g, b) in row {
                 writeln!(file, "{} {} {}", r, g, b)?;
@@ -106,8 +115,10 @@ impl Picture {
     }
 
     fn save_png(&self, filename: &str) -> Result<(), Box<dyn Error>> {
+        // create image buffer
         let mut buffer: ImageBuffer<Rgb<u8>, Vec<u8>> = ImageBuffer::new(self.xres as u32, self.yres as u32);
 
+        // iterate through data and set the pixels in the image buffer
         for (y, row) in self.data.iter().enumerate() {
             for (x, &(r, g, b)) in row.iter().enumerate() {
                 let pixel = Rgb([r as u8, g as u8, b as u8]);
@@ -116,7 +127,7 @@ impl Picture {
         }
 
         buffer.save(filename)?;
-        
+
         Ok(())
     }
 
@@ -126,6 +137,7 @@ impl Picture {
             return;
         }
 
+        // flip the y coords so the origin is at the bottom left instead of top left
         self.data[(self.yres - 1) - y][x] = (color.0, color.1, color.2);
     }
 

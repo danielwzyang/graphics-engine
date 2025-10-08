@@ -25,10 +25,10 @@ fn main() -> Result<(), Box<dyn Error>> {
 
     if let Ok(lines) = read_lines(path) {
         // create an iterator to read through lines
-        let mut iterator = lines.map_while(Result::ok);
+        let mut iterator = lines.map_while(Result::ok).enumerate();
 
         // while iterator has valid item
-        while let Some(command) = iterator.next() {
+        while let Some((_, command)) = iterator.next() {
             // skip empty lines and comments
             if command.is_empty() || command.starts_with('#') {
                 continue;
@@ -37,8 +37,13 @@ fn main() -> Result<(), Box<dyn Error>> {
             // match commands
             match command.as_str() {
                 "line" => {
-                    let arguments = iterator.next().unwrap();
+                    let (line_number, arguments) = iterator.next().unwrap();
                     let parts: Vec<&str> = arguments.split_whitespace().collect();
+
+                    if parts.len() < 6 {
+                        println!("{}:{} -> expected 6 arguments for 'line' command", path, line_number + 1);
+                    }
+
                     edges.add_edge(
                         parts[0].parse::<f32>()?,
                         parts[1].parse::<f32>()?,
@@ -54,8 +59,13 @@ fn main() -> Result<(), Box<dyn Error>> {
                 }
 
                 "scale" => {
-                    let arguments = iterator.next().unwrap();
+                    let (line_number, arguments) = iterator.next().unwrap();
                     let parts: Vec<&str> = arguments.split_whitespace().collect();
+
+                    if parts.len() < 3 {
+                        println!("{}:{} -> expected 3 arguments for 'scale' command", path, line_number + 1);
+                    }
+
                     transformation_matrix.dilate(
                         parts[0].parse::<f32>()?,
                         parts[1].parse::<f32>()?,
@@ -64,26 +74,36 @@ fn main() -> Result<(), Box<dyn Error>> {
                 }
 
                 "move" => {
-                    let arguments = iterator.next().unwrap();
+                    let (line_number, arguments) = iterator.next().unwrap();
                     let parts: Vec<&str> = arguments.split_whitespace().collect();
+
+                    if parts.len() < 3 {
+                        println!("{}:{} -> expected 3 arguments for 'move' command", path, line_number + 1);
+                    }
+
                     transformation_matrix.translate(
                         parts[0].parse::<f32>()?,
                         parts[1].parse::<f32>()?,
                         parts[2].parse::<f32>()?,
-                    );    
+                    );
                 }
 
                 "rotate" => {
-                    let arguments = iterator.next().unwrap();
+                    let (line_number, arguments) = iterator.next().unwrap();
                     let parts: Vec<&str> = arguments.split_whitespace().collect();
+
+                    if parts.len() < 2 {
+                        println!("{}:{} -> expected 2 arguments for 'rotate' command", path, line_number + 1);
+                    }
+
                     transformation_matrix.rotate(
                         match parts[0] {
                             "x" => matrix::Rotation::X,
                             "y" => matrix::Rotation::Y,
-                            _ => matrix::Rotation::Z
+                            _ => matrix::Rotation::Z // for simplicity assume rotation by z
                         },
                         parts[1].parse::<f32>()?,
-                    ); 
+                    );
                 }
 
                 "apply" => {
@@ -97,8 +117,13 @@ fn main() -> Result<(), Box<dyn Error>> {
                 }
 
                 "save" => {
-                    let arguments = iterator.next().unwrap();
+                    let (line_number, arguments) = iterator.next().unwrap();
                     let filename = arguments.trim();
+
+                    if filename.is_empty() {
+                        println!("{}:{} -> expected filename for 'save' command", path, line_number + 1);
+                    }
+
                     picture.clear();
                     edges.render_edges(&mut picture, &colors::MAGENTA);
                     picture.save_as_file(filename)?;
