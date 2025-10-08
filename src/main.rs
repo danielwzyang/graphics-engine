@@ -28,7 +28,7 @@ fn main() -> Result<(), Box<dyn Error>> {
         let mut iterator = lines.map_while(Result::ok).enumerate();
 
         // while iterator has valid item
-        while let Some((_, command)) = iterator.next() {
+        while let Some((line_number, command)) = iterator.next() {
             // skip empty lines and comments
             if command.is_empty() || command.starts_with('#') {
                 continue;
@@ -41,9 +41,8 @@ fn main() -> Result<(), Box<dyn Error>> {
                     let parts: Vec<&str> = arguments.split_whitespace().collect();
 
                     if parts.len() < 6 {
-                        println!("{}:{} -> expected 6 arguments for 'line' command", path, line_number + 1);
+                        panic!("{}:{} -> expected 6 arguments for 'line' command", path, line_number + 1);
                     }
-
                     edges.add_edge(
                         convert_parameter::<f32>(parts[0], path, line_number + 1)?,
                         convert_parameter::<f32>(parts[1], path, line_number + 1)?,
@@ -63,9 +62,9 @@ fn main() -> Result<(), Box<dyn Error>> {
                     let parts: Vec<&str> = arguments.split_whitespace().collect();
 
                     if parts.len() < 3 {
-                        println!("{}:{} -> expected 3 arguments for 'scale' command", path, line_number + 1);
+                        panic!("{}:{} -> expected 3 arguments for 'scale' command", path, line_number + 1);
                     }
-
+                    
                     transformation_matrix.dilate(
                         convert_parameter::<f32>(parts[0], path, line_number + 1)?,
                         convert_parameter::<f32>(parts[1], path, line_number + 1)?,
@@ -78,9 +77,8 @@ fn main() -> Result<(), Box<dyn Error>> {
                     let parts: Vec<&str> = arguments.split_whitespace().collect();
 
                     if parts.len() < 3 {
-                        println!("{}:{} -> expected 3 arguments for 'move' command", path, line_number + 1);
+                        panic!("{}:{} -> expected 3 arguments for 'move' command", path, line_number + 1);
                     }
-
                     transformation_matrix.translate(
                         convert_parameter::<f32>(parts[0], path, line_number + 1)?,
                         convert_parameter::<f32>(parts[1], path, line_number + 1)?,
@@ -93,7 +91,7 @@ fn main() -> Result<(), Box<dyn Error>> {
                     let parts: Vec<&str> = arguments.split_whitespace().collect();
 
                     if parts.len() < 2 {
-                        println!("{}:{} -> expected 2 arguments for 'rotate' command", path, line_number + 1);
+                        panic!("{}:{} -> expected 2 arguments for 'rotate' command", path, line_number + 1);                    
                     }
 
                     transformation_matrix.rotate(
@@ -122,7 +120,7 @@ fn main() -> Result<(), Box<dyn Error>> {
                     let filename = arguments.trim();
 
                     if filename.is_empty() {
-                        println!("{}:{} -> expected filename for 'save' command", path, line_number + 1);
+                        panic!("{}:{} -> expected filename for 'save' command", path, line_number + 1);
                     }
 
                     picture.clear();
@@ -131,7 +129,7 @@ fn main() -> Result<(), Box<dyn Error>> {
                 }
 
                 unknown => {
-                    println!("Error parsing '{}'.", unknown);
+                    panic!("{}:{} -> error parsing '{}'.", path, line_number, unknown);
                 }
             }
         }
@@ -149,6 +147,6 @@ where P: AsRef<Path>, {
 fn convert_parameter<T: std::str::FromStr>(parameter: &str, path: &str, line_number: usize) -> Result<T, Box<dyn Error>> {
     match parameter.parse::<T>() {
         Ok(value) => Ok(value),
-        _ => Err(format!("{}:{} -> Invalid parameter: {}", path, line_number, parameter).into()),
+        _ => Err(format!("{}:{} -> invalid parameter: '{}'. expected {}.", path, line_number, parameter, std::any::type_name::<T>()).into()),
     }
 }
