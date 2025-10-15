@@ -7,7 +7,7 @@ use std::env;
 mod picture;
 mod colors;
 mod matrix;
-use crate::{matrix::Matrix, picture::Picture};
+use crate::picture::Picture;
 
 #[show_image::main]
 fn main() -> Result<(), Box<dyn Error>> {
@@ -20,8 +20,8 @@ fn main() -> Result<(), Box<dyn Error>> {
 
     let path = &arguments[1];
 
-    let mut edges = Matrix::new();
-    let mut transformation_matrix = Matrix::identity();
+    let mut edges = matrix::new();
+    let mut transformation_matrix = matrix::identity();
 
     if let Ok(lines) = read_lines(path) {
         // create an iterator to read through lines
@@ -43,7 +43,9 @@ fn main() -> Result<(), Box<dyn Error>> {
                     if parts.len() < 6 {
                         panic!("{}:{} -> expected 6 arguments for 'line' command", path, line_number + 1);
                     }
-                    edges.add_edge(
+
+                    matrix::add_edge(
+                        &mut edges,
                         convert_parameter::<f32>(parts[0], path, line_number + 1)?,
                         convert_parameter::<f32>(parts[1], path, line_number + 1)?,
                         convert_parameter::<f32>(parts[2], path, line_number + 1)?,
@@ -54,7 +56,7 @@ fn main() -> Result<(), Box<dyn Error>> {
                 }
 
                 "ident" => {
-                    transformation_matrix = Matrix::identity();
+                    transformation_matrix = matrix::identity();
                 }
 
                 "scale" => {
@@ -65,7 +67,8 @@ fn main() -> Result<(), Box<dyn Error>> {
                         panic!("{}:{} -> expected 3 arguments for 'scale' command", path, line_number + 1);
                     }
                     
-                    transformation_matrix.dilate(
+                    matrix::dilate(
+                        &mut transformation_matrix,
                         convert_parameter::<f32>(parts[0], path, line_number + 1)?,
                         convert_parameter::<f32>(parts[1], path, line_number + 1)?,
                         convert_parameter::<f32>(parts[2], path, line_number + 1)?,
@@ -79,7 +82,8 @@ fn main() -> Result<(), Box<dyn Error>> {
                     if parts.len() < 3 {
                         panic!("{}:{} -> expected 3 arguments for 'move' command", path, line_number + 1);
                     }
-                    transformation_matrix.translate(
+                    matrix::translate(
+                        &mut transformation_matrix,
                         convert_parameter::<f32>(parts[0], path, line_number + 1)?,
                         convert_parameter::<f32>(parts[1], path, line_number + 1)?,
                         convert_parameter::<f32>(parts[2], path, line_number + 1)?,
@@ -94,23 +98,25 @@ fn main() -> Result<(), Box<dyn Error>> {
                         panic!("{}:{} -> expected 2 arguments for 'rotate' command", path, line_number + 1);                    
                     }
 
-                    transformation_matrix.rotate(
+                    matrix::rotate(
+                        &mut transformation_matrix,
                         match parts[0] {
                             "x" => matrix::Rotation::X,
                             "y" => matrix::Rotation::Y,
-                            _ => matrix::Rotation::Z // for simplicity assume rotation by z
+                            "z" => matrix::Rotation::Z,
+                            parameter => panic!("{}:{} -> invalid parameter: '{}'. expected 'x', 'y', or 'z'.", path, line_number + 1, parameter)
                         },
                         convert_parameter::<f32>(parts[1], path, line_number + 1)?,
                     );
                 }
 
                 "apply" => {
-                    Matrix::multiply(&transformation_matrix, &mut edges);
+                    matrix::multiply(&transformation_matrix, &mut edges);
                 }
 
                 "display" => {
                     picture.clear();
-                    edges.render_edges(&mut picture, &colors::MAGENTA);
+                    matrix::render_edges(&edges, &mut picture, &colors::MAGENTA);
                     println!("Waiting for display to close...");
                     picture.display()?;
                 }
@@ -124,7 +130,7 @@ fn main() -> Result<(), Box<dyn Error>> {
                     }
 
                     picture.clear();
-                    edges.render_edges(&mut picture, &colors::MAGENTA);
+                    matrix::render_edges(&edges, &mut picture, &colors::MAGENTA);
                     picture.save_as_file(filename)?;
                 }
 
