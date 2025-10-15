@@ -12,11 +12,19 @@ pub enum Rotation {
 
 const PI: f32 = 3.14159;
 const PARAMETRIC_STEP: f32 = 0.05;
-const HERMITE_INVERSE: [[f32; 4]; 4] = [
+
+// cubic hermite and bezier matrices to find polynomial coefficients
+const HERMITE: [[f32; 4]; 4] = [
     [2.0, -3.0, 0.0, 1.0],
     [-2.0, 3.0, 0.0, 0.0],
     [1.0, -2.0, 1.0, 0.0],
     [1.0, -1.0, 0.0, 0.0],
+];
+const BEZIER: [[f32; 4]; 4] = [
+    [-1.0, 3.0, -3.0, 1.0],
+    [3.0, -6.0, 3.0, 0.0],
+    [-3.0, 3.0, 0.0, 0.0],
+    [1.0, 0.0, 0.0, 0.0],
 ];
 
 pub fn new() -> Matrix {
@@ -34,7 +42,7 @@ pub fn identity() -> Matrix {
     data
 }
 
-pub fn multiply(m1: &Matrix, m2: &mut Matrix) {
+pub fn multiply(m1: &[[f32; 4]], m2: &mut Matrix) {
     let mut data = vec![[0.0, 0.0, 0.0, 0.0]; m2.len()];
 
     // iterate through every point
@@ -201,13 +209,23 @@ pub fn add_circle(m: &mut Matrix, cx: f32, cy: f32, r: f32) {
 }
 
 pub fn add_hermite_curve(m: &mut Matrix, x0: f32, y0: f32, x1: f32, y1: f32, rx0: f32, ry0: f32, rx1: f32, ry1: f32) {
-    let hi_vec = HERMITE_INVERSE.to_vec();
+    // find coefficients for for at^3 + bt^2 + ct + d
     let mut g = vec![[x0, x1, rx0, rx1], [y0, y1, ry0, ry1]];
-    multiply(&hi_vec, &mut g);
-    println!("{:?}", g);
+    multiply(&HERMITE, &mut g);
 
     let x = |t: f32| t * (t * (t * g[0][0] + g[0][1]) + g[0][2]) + g[0][3];
     let y = |t: f32| t * (t * (t * g[1][0] + g[1][1]) + g[1][2]) + g[1][3];
     
+    run_parametric(m, x, y);
+}
+
+pub fn add_bezier_curve(m: &mut Matrix, x0: f32, y0: f32, x1: f32, y1: f32, x2: f32, y2: f32, x3: f32, y3: f32) {
+    // find coefficients for for at^3 + bt^2 + ct + d
+    let mut g = vec![[x0, x1, x2, x3], [y0, y1, y2, y3]];
+    multiply(&BEZIER, &mut g);
+
+    let x = |t: f32| t * (t * (t * g[0][0] + g[0][1]) + g[0][2]) + g[0][3];
+    let y = |t: f32| t * (t * (t * g[1][0] + g[1][1]) + g[1][2]) + g[1][3];
+
     run_parametric(m, x, y);
 }
