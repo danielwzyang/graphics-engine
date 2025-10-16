@@ -67,7 +67,7 @@ fn main() -> Result<(), Box<dyn Error>> {
                     if parts.len() < 3 {
                         panic!("{}:{} -> 'scale' command expected <x> <y> <z>", path, line_number + 1);
                     }
-                    
+
                     matrix::dilate(
                         &mut transformation_matrix,
                         convert_parameter::<f32>(parts[0], path, line_number + 1)?,
@@ -96,7 +96,7 @@ fn main() -> Result<(), Box<dyn Error>> {
                     let parts: Vec<&str> = arguments.split_whitespace().collect();
 
                     if parts.len() < 2 {
-                        panic!("{}:{} -> 'rotate' command expected <x | y | z> <degrees>", path, line_number + 1);                    
+                        panic!("{}:{} -> 'rotate' command expected <x | y | z> <degrees>", path, line_number + 1);
                     }
 
                     matrix::rotate(
@@ -138,8 +138,8 @@ fn main() -> Result<(), Box<dyn Error>> {
                     let (line_number, arguments) = iterator.next().unwrap();
                     let parts: Vec<&str> = arguments.split_whitespace().collect();
 
-                    if parts.len() < 3 {
-                        panic!("{}:{} -> 'circle' command expected <x> <y> <r>", path, line_number + 1);
+                    if parts.len() < 4 {
+                        panic!("{}:{} -> 'circle' command expected <cx> <cy> <cz> <r>", path, line_number + 1);
                     }
 
                     matrix::add_circle(
@@ -147,6 +147,7 @@ fn main() -> Result<(), Box<dyn Error>> {
                         convert_parameter::<f32>(parts[0], path, line_number + 1)?,
                         convert_parameter::<f32>(parts[1], path, line_number + 1)?,
                         convert_parameter::<f32>(parts[2], path, line_number + 1)?,
+                        convert_parameter::<f32>(parts[3], path, line_number + 1)?,
                     );
                 }
 
@@ -155,14 +156,40 @@ fn main() -> Result<(), Box<dyn Error>> {
                     let parts: Vec<&str> = arguments.split_whitespace().collect();
 
                     if parts.len() < 8 {
-                        panic!("{}:{} -> 'circle' command expected <", path, line_number + 1);
+                        panic!("{}:{} -> 'hermite' command expected <x0> <y0> <x1> <y1> <rx0> <ry0> <rx1> <ry1>", path, line_number + 1);
                     }
 
-                    matrix::add_circle(
+                    matrix::add_hermite_curve(
                         &mut edges,
                         convert_parameter::<f32>(parts[0], path, line_number + 1)?,
                         convert_parameter::<f32>(parts[1], path, line_number + 1)?,
                         convert_parameter::<f32>(parts[2], path, line_number + 1)?,
+                        convert_parameter::<f32>(parts[3], path, line_number + 1)?,
+                        convert_parameter::<f32>(parts[4], path, line_number + 1)?,
+                        convert_parameter::<f32>(parts[5], path, line_number + 1)?,
+                        convert_parameter::<f32>(parts[6], path, line_number + 1)?,
+                        convert_parameter::<f32>(parts[7], path, line_number + 1)?,
+                    );
+                }
+
+                "bezier" => {
+                    let (line_number, arguments) = iterator.next().unwrap();
+                    let parts: Vec<&str> = arguments.split_whitespace().collect();
+
+                    if parts.len() < 8 {
+                        panic!("{}:{} -> 'bezier' command expected <x0> <y0> <x1> <y1> <x2> <y2> <x3> <y3>", path, line_number + 1);
+                    }
+
+                    matrix::add_bezier_curve(
+                        &mut edges,
+                        convert_parameter::<f32>(parts[0], path, line_number + 1)?,
+                        convert_parameter::<f32>(parts[1], path, line_number + 1)?,
+                        convert_parameter::<f32>(parts[2], path, line_number + 1)?,
+                        convert_parameter::<f32>(parts[3], path, line_number + 1)?,
+                        convert_parameter::<f32>(parts[4], path, line_number + 1)?,
+                        convert_parameter::<f32>(parts[5], path, line_number + 1)?,
+                        convert_parameter::<f32>(parts[6], path, line_number + 1)?,
+                        convert_parameter::<f32>(parts[7], path, line_number + 1)?,
                     );
                 }
 

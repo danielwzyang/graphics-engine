@@ -173,21 +173,22 @@ pub fn rotate(m: &mut Matrix, axis: Rotation, degrees: f32) {
     multiply(&transformation_matrix, m)
 }
 
-fn run_parametric<X, Y>(m: &mut Matrix, x: X, y: Y)
+fn run_parametric<X, Y>(m: &mut Matrix, x: X, y: Y, z: Option<f32>)
     where X: Fn(f32) -> f32, Y: Fn(f32) -> f32, {
     // we can use parametric equations for things like circles and splines
     // t = 0
     // t -> 1
     // x and y have their own functions of t
     let mut t: f32 = 0.0;
+    let z_val = z.unwrap_or(0.0);
 
     // we need to store this so we can draw edges between consecutive points
-    let mut last_point = (x(t), y(t), 0.0);
+    let mut last_point = (x(t), y(t), z_val);
 
     // t -> 1
     while t <= 1.0 {
         t += PARAMETRIC_STEP;
-        let current_point = (x(t), y(t), 0.0);
+        let current_point = (x(t), y(t), z_val);
 
         add_edge(
             m,
@@ -199,13 +200,13 @@ fn run_parametric<X, Y>(m: &mut Matrix, x: X, y: Y)
     }
 }
 
-pub fn add_circle(m: &mut Matrix, cx: f32, cy: f32, r: f32) {
+pub fn add_circle(m: &mut Matrix, cx: f32, cy: f32, cz: f32, r: f32) {
     // x(t) = rcos(2 * pi * t) + cx
     // y(t) = rsin(2 * pi * t) + cy
     let x = |t: f32| r * (2.0 * PI * t).cos() + cx;
     let y = |t: f32| r * (2.0 * PI * t).sin() + cy;
 
-    run_parametric(m, x, y);
+    run_parametric(m, x, y, Some(cz));
 }
 
 pub fn add_hermite_curve(m: &mut Matrix, x0: f32, y0: f32, x1: f32, y1: f32, rx0: f32, ry0: f32, rx1: f32, ry1: f32) {
@@ -215,8 +216,8 @@ pub fn add_hermite_curve(m: &mut Matrix, x0: f32, y0: f32, x1: f32, y1: f32, rx0
 
     let x = |t: f32| t * (t * (t * g[0][0] + g[0][1]) + g[0][2]) + g[0][3];
     let y = |t: f32| t * (t * (t * g[1][0] + g[1][1]) + g[1][2]) + g[1][3];
-    
-    run_parametric(m, x, y);
+
+    run_parametric(m, x, y, None);
 }
 
 pub fn add_bezier_curve(m: &mut Matrix, x0: f32, y0: f32, x1: f32, y1: f32, x2: f32, y2: f32, x3: f32, y3: f32) {
@@ -227,5 +228,5 @@ pub fn add_bezier_curve(m: &mut Matrix, x0: f32, y0: f32, x1: f32, y1: f32, x2: 
     let x = |t: f32| t * (t * (t * g[0][0] + g[0][1]) + g[0][2]) + g[0][3];
     let y = |t: f32| t * (t * (t * g[1][0] + g[1][1]) + g[1][2]) + g[1][3];
 
-    run_parametric(m, x, y);
+    run_parametric(m, x, y, None);
 }
