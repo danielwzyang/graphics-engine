@@ -36,23 +36,24 @@ fn main() -> Result<(), Box<dyn Error>> {
 
             // match commands
             match command.as_str() {
-                "line" => {
-                    let (line_number, arguments) = iterator.next().unwrap();
-                    let parts: Vec<&str> = arguments.split_whitespace().collect();
+                "display" => {
+                    picture.clear();
+                    matrix::render_edges(&edges, &mut picture, &colors::MAGENTA);
+                    println!("Waiting for display to close...");
+                    picture.display()?;
+                }
 
-                    if parts.len() < 6 {
-                        panic!("{}:{} -> expected 6 arguments for 'line' command", path, line_number + 1);
+                "save" => {
+                    let (line_number, arguments) = iterator.next().unwrap();
+                    let filename = arguments.trim();
+
+                    if filename.is_empty() {
+                        panic!("{}:{} -> 'save' command expected <filepath>", path, line_number + 1);
                     }
 
-                    matrix::add_edge(
-                        &mut edges,
-                        convert_parameter::<f32>(parts[0], path, line_number + 1)?,
-                        convert_parameter::<f32>(parts[1], path, line_number + 1)?,
-                        convert_parameter::<f32>(parts[2], path, line_number + 1)?,
-                        convert_parameter::<f32>(parts[3], path, line_number + 1)?,
-                        convert_parameter::<f32>(parts[4], path, line_number + 1)?,
-                        convert_parameter::<f32>(parts[5], path, line_number + 1)?,
-                    );
+                    picture.clear();
+                    matrix::render_edges(&edges, &mut picture, &colors::MAGENTA);
+                    picture.save_as_file(filename)?;
                 }
 
                 "ident" => {
@@ -64,7 +65,7 @@ fn main() -> Result<(), Box<dyn Error>> {
                     let parts: Vec<&str> = arguments.split_whitespace().collect();
 
                     if parts.len() < 3 {
-                        panic!("{}:{} -> expected 3 arguments for 'scale' command", path, line_number + 1);
+                        panic!("{}:{} -> 'scale' command expected <x> <y> <z>", path, line_number + 1);
                     }
                     
                     matrix::dilate(
@@ -80,7 +81,7 @@ fn main() -> Result<(), Box<dyn Error>> {
                     let parts: Vec<&str> = arguments.split_whitespace().collect();
 
                     if parts.len() < 3 {
-                        panic!("{}:{} -> expected 3 arguments for 'move' command", path, line_number + 1);
+                        panic!("{}:{} -> 'move' command expected <x> <y> <z>", path, line_number + 1);
                     }
                     matrix::translate(
                         &mut transformation_matrix,
@@ -95,7 +96,7 @@ fn main() -> Result<(), Box<dyn Error>> {
                     let parts: Vec<&str> = arguments.split_whitespace().collect();
 
                     if parts.len() < 2 {
-                        panic!("{}:{} -> expected 2 arguments for 'rotate' command", path, line_number + 1);                    
+                        panic!("{}:{} -> 'rotate' command expected <x | y | z> <degrees>", path, line_number + 1);                    
                     }
 
                     matrix::rotate(
@@ -104,7 +105,7 @@ fn main() -> Result<(), Box<dyn Error>> {
                             "x" => matrix::Rotation::X,
                             "y" => matrix::Rotation::Y,
                             "z" => matrix::Rotation::Z,
-                            parameter => panic!("{}:{} -> invalid parameter: '{}'. expected 'x', 'y', or 'z'.", path, line_number + 1, parameter)
+                            parameter => panic!("{}:{} -> invalid parameter: '{}'. expected <x | y | z>", path, line_number + 1, parameter)
                         },
                         convert_parameter::<f32>(parts[1], path, line_number + 1)?,
                     );
@@ -114,24 +115,55 @@ fn main() -> Result<(), Box<dyn Error>> {
                     matrix::multiply(&transformation_matrix, &mut edges);
                 }
 
-                "display" => {
-                    picture.clear();
-                    matrix::render_edges(&edges, &mut picture, &colors::MAGENTA);
-                    println!("Waiting for display to close...");
-                    picture.display()?;
-                }
-
-                "save" => {
+                "line" => {
                     let (line_number, arguments) = iterator.next().unwrap();
-                    let filename = arguments.trim();
+                    let parts: Vec<&str> = arguments.split_whitespace().collect();
 
-                    if filename.is_empty() {
-                        panic!("{}:{} -> expected filename for 'save' command", path, line_number + 1);
+                    if parts.len() < 6 {
+                        panic!("{}:{} -> 'line' command expected <x0> <y0> <x1> <y1>", path, line_number + 1);
                     }
 
-                    picture.clear();
-                    matrix::render_edges(&edges, &mut picture, &colors::MAGENTA);
-                    picture.save_as_file(filename)?;
+                    matrix::add_edge(
+                        &mut edges,
+                        convert_parameter::<f32>(parts[0], path, line_number + 1)?,
+                        convert_parameter::<f32>(parts[1], path, line_number + 1)?,
+                        convert_parameter::<f32>(parts[2], path, line_number + 1)?,
+                        convert_parameter::<f32>(parts[3], path, line_number + 1)?,
+                        convert_parameter::<f32>(parts[4], path, line_number + 1)?,
+                        convert_parameter::<f32>(parts[5], path, line_number + 1)?,
+                    );
+                }
+
+                "circle" => {
+                    let (line_number, arguments) = iterator.next().unwrap();
+                    let parts: Vec<&str> = arguments.split_whitespace().collect();
+
+                    if parts.len() < 3 {
+                        panic!("{}:{} -> 'circle' command expected <x> <y> <r>", path, line_number + 1);
+                    }
+
+                    matrix::add_circle(
+                        &mut edges,
+                        convert_parameter::<f32>(parts[0], path, line_number + 1)?,
+                        convert_parameter::<f32>(parts[1], path, line_number + 1)?,
+                        convert_parameter::<f32>(parts[2], path, line_number + 1)?,
+                    );
+                }
+
+                "hermite" => {
+                    let (line_number, arguments) = iterator.next().unwrap();
+                    let parts: Vec<&str> = arguments.split_whitespace().collect();
+
+                    if parts.len() < 8 {
+                        panic!("{}:{} -> 'circle' command expected <", path, line_number + 1);
+                    }
+
+                    matrix::add_circle(
+                        &mut edges,
+                        convert_parameter::<f32>(parts[0], path, line_number + 1)?,
+                        convert_parameter::<f32>(parts[1], path, line_number + 1)?,
+                        convert_parameter::<f32>(parts[2], path, line_number + 1)?,
+                    );
                 }
 
                 unknown => {
