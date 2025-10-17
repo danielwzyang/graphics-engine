@@ -38,7 +38,7 @@ fn main() -> Result<(), Box<dyn Error>> {
             match command.as_str() {
                 "display" => {
                     picture.clear();
-                    matrix::render_edges(&edges, &mut picture, &colors::MAGENTA);
+                    matrix::render_edges(&edges, &mut picture, &colors::BLACK);
                     println!("Waiting for display to close...");
                     picture.display()?;
                 }
@@ -52,7 +52,7 @@ fn main() -> Result<(), Box<dyn Error>> {
                     }
 
                     picture.clear();
-                    matrix::render_edges(&edges, &mut picture, &colors::MAGENTA);
+                    matrix::render_edges(&edges, &mut picture, &colors::BLACK);
                     picture.save_as_file(filename)?;
                 }
 

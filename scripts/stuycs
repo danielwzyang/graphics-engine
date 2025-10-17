@@ -1,3 +1,5 @@
+# courtesy of mr. dw
+
 #face
 circle
 250 250 0 200
@@ -30,6 +32,8 @@ hermite
 185 496 179 453 -105 -23 100 23
 hermite
 220 493 204 453 -112 -20 -125 -29
+
 display
+
 save
 face.png

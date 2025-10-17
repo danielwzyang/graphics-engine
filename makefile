@@ -1,10 +1,10 @@
 RUN ?= WINIT_UNIX_BACKEND=x11 cargo run
 
 default:
-	${RUN} scripts/default
+	${RUN} scripts/stuycs
 
 custom:
-	${RUN} scripts/dodecahedron
+	${RUN} scripts/github
 
 clean:
 	rm -rf *.ppm *.png
