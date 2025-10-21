@@ -193,6 +193,42 @@ fn main() -> Result<(), Box<dyn Error>> {
                     );
                 }
 
+                "box" => {
+                    let (line_number, arguments) = iterator.next().unwrap();
+                    let parts: Vec<&str> = arguments.split_whitespace().collect();
+
+                    if parts.len() < 6 {
+                        panic!("{}:{} -> 'box' command expected <x> <y> <z> <w> <h> <d>", path, line_number + 1);
+                    }
+
+                    matrix::add_box(
+                        &mut edges,
+                        convert_parameter::<f32>(parts[0], path, line_number + 1)?,
+                        convert_parameter::<f32>(parts[1], path, line_number + 1)?,
+                        convert_parameter::<f32>(parts[2], path, line_number + 1)?,
+                        convert_parameter::<f32>(parts[3], path, line_number + 1)?,
+                        convert_parameter::<f32>(parts[4], path, line_number + 1)?,
+                        convert_parameter::<f32>(parts[5], path, line_number + 1)?,
+                    );
+                }
+
+                "sphere" => {
+                    let (line_number, arguments) = iterator.next().unwrap();
+                    let parts: Vec<&str> = arguments.split_whitespace().collect();
+
+                    if parts.len() < 4 {
+                        panic!("{}:{} -> 'sphere' command expected <cx> <cy> <cz> <r>", path, line_number + 1);
+                    }
+
+                    matrix::add_sphere(
+                        &mut edges,
+                        convert_parameter::<f32>(parts[0], path, line_number + 1)?,
+                        convert_parameter::<f32>(parts[1], path, line_number + 1)?,
+                        convert_parameter::<f32>(parts[2], path, line_number + 1)?,
+                        convert_parameter::<f32>(parts[3], path, line_number + 1)?,
+                    );
+                }
+
                 unknown => {
                     panic!("{}:{} -> error parsing '{}'.", path, line_number, unknown);
                 }

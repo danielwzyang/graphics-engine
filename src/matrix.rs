@@ -230,3 +230,84 @@ pub fn add_bezier_curve(m: &mut Matrix, x0: f32, y0: f32, x1: f32, y1: f32, x2: 
 
     run_parametric(m, x, y, None);
 }
+
+pub fn add_box(m: &mut Matrix, x: f32, y: f32, z: f32, w: f32, h: f32, d: f32) {
+    /*
+        4 ---- 5
+      / |    / |
+    0 ---- 1   | h
+    |   |  |   |
+    |   7 -|-- 6
+    | /    | /  d
+    3 ---- 2
+       w
+    */
+
+    let vertices = [
+        [x, y, z],
+        [x + w, y, z],
+        [x + w, y - h, z],
+        [x, y - h, z],
+        [x, y, z - d],
+        [x + w, y, z - d],
+        [x + w, y - h, z - d],
+        [x, y - h, z - d],
+    ];
+
+    // 0 - 1
+    add_edge(m, vertices[0][0], vertices[0][1], vertices[0][2], vertices[1][0], vertices[1][1], vertices[1][2]);
+    // 1 - 2
+    add_edge(m, vertices[1][0], vertices[1][1], vertices[1][2], vertices[2][0], vertices[2][1], vertices[2][2]);
+    // 2 - 3
+    add_edge(m, vertices[2][0], vertices[2][1], vertices[2][2], vertices[3][0], vertices[3][1], vertices[3][2]);
+    // 3 - 0
+    add_edge(m, vertices[3][0], vertices[3][1], vertices[3][2], vertices[0][0], vertices[0][1], vertices[0][2]);
+
+    // 0 - 4
+    add_edge(m, vertices[0][0], vertices[0][1], vertices[0][2], vertices[4][0], vertices[4][1], vertices[4][2]);
+    // 1 - 5
+    add_edge(m, vertices[1][0], vertices[1][1], vertices[1][2], vertices[5][0], vertices[5][1], vertices[5][2]);
+    // 2 - 6
+    add_edge(m, vertices[2][0], vertices[2][1], vertices[2][2], vertices[6][0], vertices[6][1], vertices[6][2]);
+    // 3 - 7
+    add_edge(m, vertices[3][0], vertices[3][1], vertices[3][2], vertices[7][0], vertices[7][1], vertices[7][2]);
+
+    // 4 - 5
+    add_edge(m, vertices[4][0], vertices[4][1], vertices[4][2], vertices[5][0], vertices[5][1], vertices[5][2]);
+    // 5 - 6
+    add_edge(m, vertices[5][0], vertices[5][1], vertices[5][2], vertices[6][0], vertices[6][1], vertices[6][2]);
+    // 6 - 7
+    add_edge(m, vertices[6][0], vertices[6][1], vertices[6][2], vertices[7][0], vertices[7][1], vertices[7][2]);
+    // 7 - 4
+    add_edge(m, vertices[7][0], vertices[7][1], vertices[7][2], vertices[4][0], vertices[4][1], vertices[4][2]);
+}
+
+pub fn add_sphere(m: &mut Matrix, cx: f32, cy: f32, cz: f32, r: f32) {
+    // not using run_parametric because this parametric is nested but the logic is the same
+    let x = |cir: f32| r * (PI * cir).cos() + cx;
+    let y = |rot: f32, cir: f32| r * (PI * cir).sin() * (2.0 * PI * rot).cos() + cy;
+    let z = |rot: f32, cir: f32| r * (PI * cir).sin() * (2.0 * PI * rot).sin() + cz;
+
+    let mut rot: f32 = 0.0;
+    let mut cir: f32 = 0.0;
+
+    let mut last_point = (x(cir), y(rot, cir), z(rot, cir));
+
+    while rot <= 1.0 {
+        while cir <= 1.0 {
+            cir += PARAMETRIC_STEP;
+            let current_point = (x(cir), y(rot, cir), z(rot, cir));
+
+            add_edge(
+                m,
+                last_point.0, last_point.1, last_point.2,
+                current_point.0, current_point.1, current_point.2,
+            );
+
+            last_point = current_point;
+        }
+        rot += PARAMETRIC_STEP;
+        cir = 0.0;
+        last_point = (x(cir), y(rot, cir), z(rot, cir));
+    }
+}
