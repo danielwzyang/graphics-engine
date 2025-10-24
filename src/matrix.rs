@@ -282,21 +282,22 @@ pub fn add_box(m: &mut Matrix, x: f32, y: f32, z: f32, w: f32, h: f32, d: f32) {
     add_edge(m, vertices[7][0], vertices[7][1], vertices[7][2], vertices[4][0], vertices[4][1], vertices[4][2]);
 }
 
-fn draw_points(m: &mut Matrix, points: Vec<f32; 3>) {
+fn draw_points(m: &mut Matrix, points: Vec<[f32; 3]>) {
+    // basically just draw a tiny line to make a point
     for point in points {
         add_edge(
             m,
-            point[0][0], point[0][1], point[0][2],
-            point[0][0] + 1.0, point[0][1] + 1.0, point[0][2] + 1.0, 
+            point[0], point[1], point[2],
+            point[0] + 1.0, point[1] + 1.0, point[2] + 1.0, 
         )
     }
 }
 
 pub fn add_sphere(m: &mut Matrix, cx: f32, cy: f32, cz: f32, r: f32) {
-    generate_sphere(cx, cy, cz, r);
+    draw_points(m, generate_sphere_points(cx, cy, cz, r));
 }
 
-fn generate_sphere(cx: f32, cy: f32, cz: f32, r: f32) -> Vec<[f32; 3]> {
+fn generate_sphere_points(cx: f32, cy: f32, cz: f32, r: f32) -> Vec<[f32; 3]> {
     // not using run_parametric because this parametric is nested but the logic is the same
     let x = |cir: f32| r * (PI * cir).cos() + cx;
     let y = |rot: f32, cir: f32| r * (PI * cir).sin() * (2.0 * PI * rot).cos() + cy;
@@ -309,7 +310,7 @@ fn generate_sphere(cx: f32, cy: f32, cz: f32, r: f32) -> Vec<[f32; 3]> {
 
     while rot <= 1.0 {
         while cir <= 1.0 {
-            cir += PARAMETRIC_STEP
+            cir += PARAMETRIC_STEP;
             point_list.push([x(cir), y(rot, cir), z(rot, cir)]);
         }
         rot += PARAMETRIC_STEP;
@@ -319,7 +320,11 @@ fn generate_sphere(cx: f32, cy: f32, cz: f32, r: f32) -> Vec<[f32; 3]> {
     point_list
 }
 
-fn add_torus(m: &mut Matrix, cx: f32, cy: f32, cz: f32, r1: f32, r2: f32) {
+pub fn add_torus(m: &mut Matrix, cx: f32, cy: f32, cz: f32, r1: f32, r2: f32) {
+    draw_points(m, generate_torus_points(cx, cy, cz, r1, r2));
+}
+
+fn generate_torus_points(cx: f32, cy: f32, cz: f32, r1: f32, r2: f32) -> Vec<[f32; 3]> {
     // r1 is the radius of the circle that makes up the torus
     // r2 is the radius of the entire torus (translation factor)
     let x = |rot: f32, cir: f32| (2.0 * PI * rot).cos() * (r1 * (2.0 * PI * cir).cos() + r2) + cx;
@@ -328,19 +333,17 @@ fn add_torus(m: &mut Matrix, cx: f32, cy: f32, cz: f32, r1: f32, r2: f32) {
 
     let mut rot: f32 = 0.0;
     let mut cir: f32 = 0.0;
+    
+    let mut point_list: Vec<[f32; 3]> = vec![];
 
     while rot <= 1.0 {
         while cir <= 1.0 {
             cir += PARAMETRIC_STEP;
-            let current_point = (x(rot, cir), y(cir), z(rot, cir));
-
-            add_edge(
-                m,
-                current_point.0, current_point.1, current_point.2,
-                current_point.0 + 1.0, current_point.1 + 1.0, current_point.2 + 1.0,
-            );
+            point_list.push([x(rot, cir), y(cir), z(rot, cir)]);
         }
         rot += PARAMETRIC_STEP;
         cir = 0.0;
     }
+
+    point_list
 }
