@@ -43,6 +43,10 @@ fn main() -> Result<(), Box<dyn Error>> {
                     picture.display()?;
                 }
 
+                "clear" => {
+                    edges = matrix::new();
+                }
+
                 "save" => {
                     let (line_number, arguments) = iterator.next().unwrap();
                     let filename = arguments.trim();
@@ -226,6 +230,24 @@ fn main() -> Result<(), Box<dyn Error>> {
                         convert_parameter::<f32>(parts[1], path, line_number + 1)?,
                         convert_parameter::<f32>(parts[2], path, line_number + 1)?,
                         convert_parameter::<f32>(parts[3], path, line_number + 1)?,
+                    );
+                }
+
+                "torus" => {
+                    let (line_number, arguments) = iterator.next().unwrap();
+                    let parts: Vec<&str> = arguments.split_whitespace().collect();
+
+                    if parts.len() < 4 {
+                        panic!("{}:{} -> 'torus' command expected <cx> <cy> <cz> <r> <big_r>", path, line_number + 1);
+                    }
+
+                    matrix::add_torus(
+                        &mut edges,
+                        convert_parameter::<f32>(parts[0], path, line_number + 1)?,
+                        convert_parameter::<f32>(parts[1], path, line_number + 1)?,
+                        convert_parameter::<f32>(parts[2], path, line_number + 1)?,
+                        convert_parameter::<f32>(parts[3], path, line_number + 1)?,
+                        convert_parameter::<f32>(parts[4], path, line_number + 1)?,
                     );
                 }
 

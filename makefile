@@ -1,7 +1,7 @@
 RUN ?= WINIT_UNIX_BACKEND=x11 cargo run
 
 default:
-	${RUN} scripts/stuycs
+	${RUN} scripts/test
 
 custom:
 	${RUN} scripts/github

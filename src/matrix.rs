@@ -291,8 +291,6 @@ pub fn add_sphere(m: &mut Matrix, cx: f32, cy: f32, cz: f32, r: f32) {
     let mut rot: f32 = 0.0;
     let mut cir: f32 = 0.0;
 
-    let mut last_point = (x(cir), y(rot, cir), z(rot, cir));
-
     while rot <= 1.0 {
         while cir <= 1.0 {
             cir += PARAMETRIC_STEP;
@@ -300,14 +298,35 @@ pub fn add_sphere(m: &mut Matrix, cx: f32, cy: f32, cz: f32, r: f32) {
 
             add_edge(
                 m,
-                last_point.0, last_point.1, last_point.2,
                 current_point.0, current_point.1, current_point.2,
+                current_point.0 + 1.0, current_point.1 + 1.0, current_point.2 + 1.0,
             );
-
-            last_point = current_point;
         }
         rot += PARAMETRIC_STEP;
         cir = 0.0;
-        last_point = (x(cir), y(rot, cir), z(rot, cir));
+    }
+}
+
+pub fn add_torus(m: &mut Matrix, cx: f32, cy: f32, cz: f32, r: f32, big_r: f32) {
+    let x = |rot: f32, cir: f32| (2.0 * PI * rot).cos() * (r * (2.0 * PI * cir).cos() + big_r) + cx;
+    let y = |cir: f32| r * (2.0 * PI * cir).sin() + cy;
+    let z = |rot: f32, cir: f32| -1.0 * (2.0 * PI * rot).sin() * (r * (2.0 * PI * cir).cos() + big_r) + cz;
+
+    let mut rot: f32 = 0.0;
+    let mut cir: f32 = 0.0;
+
+    while rot <= 1.0 {
+        while cir <= 1.0 {
+            cir += PARAMETRIC_STEP;
+            let current_point = (x(rot, cir), y(cir), z(rot, cir));
+
+            add_edge(
+                m,
+                current_point.0, current_point.1, current_point.2,
+                current_point.0 + 1.0, current_point.1 + 1.0, current_point.2 + 1.0,
+            );
+        }
+        rot += PARAMETRIC_STEP;
+        cir = 0.0;
     }
 }
