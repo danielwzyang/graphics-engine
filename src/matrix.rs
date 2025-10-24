@@ -307,10 +307,12 @@ pub fn add_sphere(m: &mut Matrix, cx: f32, cy: f32, cz: f32, r: f32) {
     }
 }
 
-pub fn add_torus(m: &mut Matrix, cx: f32, cy: f32, cz: f32, r: f32, big_r: f32) {
-    let x = |rot: f32, cir: f32| (2.0 * PI * rot).cos() * (r * (2.0 * PI * cir).cos() + big_r) + cx;
-    let y = |cir: f32| r * (2.0 * PI * cir).sin() + cy;
-    let z = |rot: f32, cir: f32| -1.0 * (2.0 * PI * rot).sin() * (r * (2.0 * PI * cir).cos() + big_r) + cz;
+pub fn add_torus(m: &mut Matrix, cx: f32, cy: f32, cz: f32, r1: f32, r2: f32) {
+    // r1 is the radius of the circle that makes up the torus
+    // r2 is the radius of the entire torus (translation factor)
+    let x = |rot: f32, cir: f32| (2.0 * PI * rot).cos() * (r1 * (2.0 * PI * cir).cos() + r2) + cx;
+    let y = |cir: f32| r1 * (2.0 * PI * cir).sin() + cy;
+    let z = |rot: f32, cir: f32| -1.0 * (2.0 * PI * rot).sin() * (r1 * (2.0 * PI * cir).cos() + r2) + cz;
 
     let mut rot: f32 = 0.0;
     let mut cir: f32 = 0.0;

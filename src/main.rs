@@ -238,7 +238,7 @@ fn main() -> Result<(), Box<dyn Error>> {
                     let parts: Vec<&str> = arguments.split_whitespace().collect();
 
                     if parts.len() < 4 {
-                        panic!("{}:{} -> 'torus' command expected <cx> <cy> <cz> <r> <big_r>", path, line_number + 1);
+                        panic!("{}:{} -> 'torus' command expected <cx> <cy> <cz> <r1> <r2>", path, line_number + 1);
                     }
 
                     matrix::add_torus(
