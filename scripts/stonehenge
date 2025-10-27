@@ -1,0 +1,43 @@
+# a really bad stonehenge
+
+# smaller structure on the left
+box
+0 120 0 50 120 50
+box
+80 120 0 50 120 50
+box
+15 140 0 100 20 50
+
+ident
+rotate
+y 15
+move
+-200 0 50
+apply
+
+# bigger structure that the sun passes through
+box
+0 150 0 50 150 50
+box
+80 150 0 50 150 50
+box
+15 170 0 100 20 50
+line
+-500 0 -250 500 0 -250
+
+# the sun behind the bigger structure
+sphere
+65 100 -250 50
+
+ident
+rotate
+y 40
+rotate
+x 20
+move
+300 150 0
+apply
+
+save
+stonehenge.png
+display

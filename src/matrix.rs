@@ -288,7 +288,7 @@ fn draw_points(m: &mut Matrix, points: Vec<[f32; 3]>) {
         add_edge(
             m,
             point[0], point[1], point[2],
-            point[0] + 1.0, point[1] + 1.0, point[2] + 1.0, 
+            point[0], point[1], point[2], 
         )
     }
 }
@@ -333,7 +333,7 @@ fn generate_torus_points(cx: f32, cy: f32, cz: f32, r1: f32, r2: f32) -> Vec<[f3
 
     let mut rot: f32 = 0.0;
     let mut cir: f32 = 0.0;
-    
+
     let mut point_list: Vec<[f32; 3]> = vec![];
 
     while rot <= 1.0 {

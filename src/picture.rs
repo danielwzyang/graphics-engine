@@ -198,5 +198,8 @@ impl Picture {
                 d += b;
             }
         }
+
+        // plot last point
+        self.plot(x0 as usize, y0 as usize, &color);
     }
 }
