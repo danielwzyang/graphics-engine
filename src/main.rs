@@ -21,6 +21,7 @@ fn main() -> Result<(), Box<dyn Error>> {
     let path = &arguments[1];
 
     let mut edges = matrix::new();
+    let mut polygons = matrix::new();
     let mut transformation_matrix = matrix::identity();
 
     if let Ok(lines) = read_lines(path) {
@@ -39,6 +40,7 @@ fn main() -> Result<(), Box<dyn Error>> {
                 "display" => {
                     picture.clear();
                     matrix::render_edges(&edges, &mut picture, &colors::BLACK);
+                    matrix::render_polygons(&polygons, &mut picture, &colors::MAGENTA);
                     println!("Waiting for display to close...");
                     picture.display()?;
                 }
@@ -57,6 +59,7 @@ fn main() -> Result<(), Box<dyn Error>> {
 
                     picture.clear();
                     matrix::render_edges(&edges, &mut picture, &colors::BLACK);
+                    matrix::render_polygons(&polygons, &mut picture, &colors::MAGENTA);
                     picture.save_as_file(filename)?;
                 }
 
@@ -117,6 +120,7 @@ fn main() -> Result<(), Box<dyn Error>> {
 
                 "apply" => {
                     matrix::multiply(&transformation_matrix, &mut edges);
+                    matrix::multiply(&transformation_matrix, &mut polygons);
                 }
 
                 "line" => {
@@ -206,7 +210,7 @@ fn main() -> Result<(), Box<dyn Error>> {
                     }
 
                     matrix::add_box(
-                        &mut edges,
+                        &mut polygons,
                         convert_parameter::<f32>(parts[0], path, line_number + 1)?,
                         convert_parameter::<f32>(parts[1], path, line_number + 1)?,
                         convert_parameter::<f32>(parts[2], path, line_number + 1)?,

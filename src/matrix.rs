@@ -2,6 +2,7 @@
 
 type Matrix = Vec<[f32; 4]>;
 
+use std::f32::consts::PI;
 use crate::picture::Picture;
 
 pub enum Rotation {
@@ -10,7 +11,6 @@ pub enum Rotation {
     Z,
 }
 
-const PI: f32 = 3.14159;
 const PARAMETRIC_STEP: f32 = 0.05;
 
 // cubic hermite and bezier matrices to find polynomial coefficients
@@ -83,6 +83,20 @@ pub fn render_edges(m: &Matrix, picture: &mut Picture, color: &(usize, usize, us
     for edge in m.chunks(2) {
         // loop through in pairs
         picture.draw_line(edge[0][0] as isize, edge[0][1] as isize, edge[1][0] as isize, edge[1][1] as isize, &color);
+    }
+}
+
+pub fn add_polygon(m: &mut Matrix, x0: f32, y0: f32, z0: f32, x1: f32, y1: f32, z1: f32, x2: f32, y2: f32, z2: f32) {
+    add_point(m, x0, y0, z0, 1.0);
+    add_point(m, x1, y1, z1, 1.0);
+    add_point(m, x2, y2, z2, 1.0);
+}
+
+pub fn render_polygons(m: &Matrix, picture: &mut Picture, color: &(usize, usize, usize)) {
+    for edge in m.chunks(3) {
+        picture.draw_line(edge[0][0] as isize, edge[0][1] as isize, edge[1][0] as isize, edge[1][1] as isize, &color);
+        picture.draw_line(edge[1][0] as isize, edge[1][1] as isize, edge[2][0] as isize, edge[2][1] as isize, &color);
+        picture.draw_line(edge[2][0] as isize, edge[2][1] as isize, edge[0][0] as isize, edge[0][1] as isize, &color);
     }
 }
 
@@ -254,32 +268,89 @@ pub fn add_box(m: &mut Matrix, x: f32, y: f32, z: f32, w: f32, h: f32, d: f32) {
         [x, y - h, z - d],
     ];
 
-    // 0 - 1
-    add_edge(m, vertices[0][0], vertices[0][1], vertices[0][2], vertices[1][0], vertices[1][1], vertices[1][2]);
-    // 1 - 2
-    add_edge(m, vertices[1][0], vertices[1][1], vertices[1][2], vertices[2][0], vertices[2][1], vertices[2][2]);
-    // 2 - 3
-    add_edge(m, vertices[2][0], vertices[2][1], vertices[2][2], vertices[3][0], vertices[3][1], vertices[3][2]);
-    // 3 - 0
-    add_edge(m, vertices[3][0], vertices[3][1], vertices[3][2], vertices[0][0], vertices[0][1], vertices[0][2]);
+    // 021
+    add_polygon(m, 
+        vertices[0][0], vertices[0][1], vertices[0][2], 
+        vertices[2][0], vertices[2][1], vertices[2][2], 
+        vertices[1][0], vertices[1][1], vertices[1][2],
+    );
 
-    // 0 - 4
-    add_edge(m, vertices[0][0], vertices[0][1], vertices[0][2], vertices[4][0], vertices[4][1], vertices[4][2]);
-    // 1 - 5
-    add_edge(m, vertices[1][0], vertices[1][1], vertices[1][2], vertices[5][0], vertices[5][1], vertices[5][2]);
-    // 2 - 6
-    add_edge(m, vertices[2][0], vertices[2][1], vertices[2][2], vertices[6][0], vertices[6][1], vertices[6][2]);
-    // 3 - 7
-    add_edge(m, vertices[3][0], vertices[3][1], vertices[3][2], vertices[7][0], vertices[7][1], vertices[7][2]);
+    // 032
+    add_polygon(m, 
+        vertices[0][0], vertices[0][1], vertices[0][2], 
+        vertices[3][0], vertices[3][1], vertices[3][2], 
+        vertices[2][0], vertices[2][1], vertices[2][2],
+    );
 
-    // 4 - 5
-    add_edge(m, vertices[4][0], vertices[4][1], vertices[4][2], vertices[5][0], vertices[5][1], vertices[5][2]);
-    // 5 - 6
-    add_edge(m, vertices[5][0], vertices[5][1], vertices[5][2], vertices[6][0], vertices[6][1], vertices[6][2]);
-    // 6 - 7
-    add_edge(m, vertices[6][0], vertices[6][1], vertices[6][2], vertices[7][0], vertices[7][1], vertices[7][2]);
-    // 7 - 4
-    add_edge(m, vertices[7][0], vertices[7][1], vertices[7][2], vertices[4][0], vertices[4][1], vertices[4][2]);
+    // 415
+    add_polygon(m, 
+        vertices[4][0], vertices[4][1], vertices[4][2], 
+        vertices[1][0], vertices[1][1], vertices[1][2], 
+        vertices[5][0], vertices[5][1], vertices[5][2],
+    );
+
+    // 401
+    add_polygon(m, 
+        vertices[4][0], vertices[4][1], vertices[4][2], 
+        vertices[0][0], vertices[0][1], vertices[0][2], 
+        vertices[1][0], vertices[1][1], vertices[1][2],
+    );
+
+    // 704
+    add_polygon(m, 
+        vertices[7][0], vertices[7][1], vertices[7][2], 
+        vertices[0][0], vertices[0][1], vertices[0][2], 
+        vertices[4][0], vertices[4][1], vertices[4][2],
+    );
+
+    // 730
+    add_polygon(m, 
+        vertices[7][0], vertices[7][1], vertices[7][2], 
+        vertices[3][0], vertices[3][1], vertices[3][2], 
+        vertices[0][0], vertices[0][1], vertices[0][2],
+    );
+
+    // 637
+    add_polygon(m, 
+        vertices[6][0], vertices[6][1], vertices[6][2], 
+        vertices[3][0], vertices[3][1], vertices[3][2], 
+        vertices[7][0], vertices[7][1], vertices[7][2],
+    );
+
+    // 623
+    add_polygon(m, 
+        vertices[6][0], vertices[6][1], vertices[6][2], 
+        vertices[2][0], vertices[2][1], vertices[2][2], 
+        vertices[3][0], vertices[3][1], vertices[3][2],
+    );
+
+    // 526
+    add_polygon(m, 
+        vertices[5][0], vertices[5][1], vertices[5][2], 
+        vertices[2][0], vertices[2][1], vertices[2][2], 
+        vertices[6][0], vertices[6][1], vertices[6][2],
+    );
+
+    // 512
+    add_polygon(m, 
+        vertices[5][0], vertices[5][1], vertices[5][2], 
+        vertices[1][0], vertices[1][1], vertices[1][2], 
+        vertices[2][0], vertices[2][1], vertices[2][2],
+    );
+
+    // 756
+    add_polygon(m, 
+        vertices[7][0], vertices[7][1], vertices[7][2], 
+        vertices[5][0], vertices[5][1], vertices[5][2], 
+        vertices[6][0], vertices[6][1], vertices[6][2],
+    );
+
+    // 745
+    add_polygon(m, 
+        vertices[7][0], vertices[7][1], vertices[7][2], 
+        vertices[4][0], vertices[4][1], vertices[4][2], 
+        vertices[5][0], vertices[5][1], vertices[5][2],
+    );    
 }
 
 fn draw_points(m: &mut Matrix, points: Vec<[f32; 3]>) {

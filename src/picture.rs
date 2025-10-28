@@ -161,7 +161,7 @@ impl Picture {
 
         // a and b derived from line equation Ax + By + C
         // imagine d as the cumulative error as we move through the line
-        let mut d = a + b / 2;
+        let mut d = if small_slope { a + b / 2 } else { b + a / 2 };
 
         if small_slope {
             // there is at least one pixel for every x value for small slope
