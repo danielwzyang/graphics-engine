@@ -11,7 +11,7 @@ pub enum Rotation {
     Z,
 }
 
-const PARAMETRIC_STEP: f32 = 0.05;
+const STEPS: i32 = 10;
 
 // cubic hermite and bezier matrices to find polynomial coefficients
 const HERMITE: [[f32; 4]; 4] = [
@@ -193,15 +193,14 @@ fn run_parametric<X, Y>(m: &mut Matrix, x: X, y: Y, z: Option<f32>)
     // t = 0
     // t -> 1
     // x and y have their own functions of t
-    let mut t: f32 = 0.0;
     let z_val = z.unwrap_or(0.0);
 
     // we need to store this so we can draw edges between consecutive points
-    let mut last_point = (x(t), y(t), z_val);
+    let mut last_point = (x(0.0), y(0.0), z_val);
 
     // t -> 1
-    while t <= 1.0 {
-        t += PARAMETRIC_STEP;
+    for i in 0..=STEPS {
+        let t = i as f32 / STEPS as f32;
         let current_point = (x(t), y(t), z_val);
 
         add_edge(
@@ -365,7 +364,62 @@ fn draw_points(m: &mut Matrix, points: Vec<[f32; 3]>) {
 }
 
 pub fn add_sphere(m: &mut Matrix, cx: f32, cy: f32, cz: f32, r: f32) {
-    draw_points(m, generate_sphere_points(cx, cy, cz, r));
+    let points = generate_sphere_points(cx, cy, cz, r);
+    println!("{:?}", points);
+
+    // e.g. a STEPS of 10 results in 11 points per semicircle
+    let steps = STEPS + 1;
+    
+    let get = |longitude: i32, latitude: i32| -> [f32; 3] {
+        points[(longitude * steps + latitude) as usize]
+    };
+
+    for longitude in 0..steps {
+        let next = if longitude + 1 == steps { 0 } else { longitude + 1 };
+        // this is for all the polygons that aren't on the poles
+        for latitude in 1..steps-1 {
+            let p1 = get(longitude, latitude);
+            let p2 = get(longitude, latitude + 1);
+            let p1_across = get(next, latitude);
+            let p2_across = get(next, latitude + 1);
+            
+            // p1, p2, p2_across
+            add_polygon(m, 
+                p1[0], p1[1], p1[2],
+                p2[0], p2[1], p2[2],
+                p2_across[0], p2_across[1], p2_across[2],
+            );
+
+            // p1, p2_across, p1_across
+            add_polygon(m, 
+                p1[0], p1[1], p1[2],
+                p2_across[0], p2_across[1], p2_across[2],
+                p1_across[0], p1_across[1], p1_across[2],
+            );
+        }
+
+        // two triangles at the poles
+
+        // pole, p1, p1_across
+        let pole = get(longitude, 0);
+        let p = get(longitude, 1);
+        let p_across = get(next, 1);
+        add_polygon(m, 
+            pole[0], pole[1], pole[2],
+            p[0], p[1], p[2],
+            p_across[0], p_across[1], p_across[2],
+        );
+
+        // pole, pminus1_across, pminus1
+        let pole = get(longitude, steps - 1);
+        let p = get(longitude, steps - 2);
+        let p_across = get(next, steps - 2);
+        add_polygon(m, 
+            pole[0], pole[1], pole[2],
+            p_across[0], p_across[1], p_across[2],
+            p[0], p[1], p[2],
+        );
+    }
 }
 
 fn generate_sphere_points(cx: f32, cy: f32, cz: f32, r: f32) -> Vec<[f32; 3]> {
@@ -374,25 +428,22 @@ fn generate_sphere_points(cx: f32, cy: f32, cz: f32, r: f32) -> Vec<[f32; 3]> {
     let y = |rot: f32, cir: f32| r * (PI * cir).sin() * (2.0 * PI * rot).cos() + cy;
     let z = |rot: f32, cir: f32| r * (PI * cir).sin() * (2.0 * PI * rot).sin() + cz;
 
-    let mut rot: f32 = 0.0;
-    let mut cir: f32 = 0.0;
-
     let mut point_list: Vec<[f32; 3]> = vec![];
 
-    while rot <= 1.0 {
-        while cir <= 1.0 {
-            cir += PARAMETRIC_STEP;
+    for i in 0..=STEPS {
+        let rot = i as f32 / STEPS as f32;
+        for j in 0..=STEPS {
+            let cir = j as f32 / STEPS as f32;
             point_list.push([x(cir), y(rot, cir), z(rot, cir)]);
         }
-        rot += PARAMETRIC_STEP;
-        cir = 0.0;
     }
 
     point_list
 }
 
 pub fn add_torus(m: &mut Matrix, cx: f32, cy: f32, cz: f32, r1: f32, r2: f32) {
-    draw_points(m, generate_torus_points(cx, cy, cz, r1, r2));
+    let points = generate_torus_points(cx, cy, cz, r1, r2);
+    draw_points(m, points);
 }
 
 fn generate_torus_points(cx: f32, cy: f32, cz: f32, r1: f32, r2: f32) -> Vec<[f32; 3]> {
@@ -402,18 +453,14 @@ fn generate_torus_points(cx: f32, cy: f32, cz: f32, r1: f32, r2: f32) -> Vec<[f3
     let y = |cir: f32| r1 * (2.0 * PI * cir).sin() + cy;
     let z = |rot: f32, cir: f32| -1.0 * (2.0 * PI * rot).sin() * (r1 * (2.0 * PI * cir).cos() + r2) + cz;
 
-    let mut rot: f32 = 0.0;
-    let mut cir: f32 = 0.0;
-
     let mut point_list: Vec<[f32; 3]> = vec![];
 
-    while rot <= 1.0 {
-        while cir <= 1.0 {
-            cir += PARAMETRIC_STEP;
+    for i in 0..=STEPS {
+        let rot = i as f32 / STEPS as f32;
+        for j in 0..=STEPS {
+            let cir = j as f32 / STEPS as f32;
             point_list.push([x(rot, cir), y(cir), z(rot, cir)]);
         }
-        rot += PARAMETRIC_STEP;
-        cir = 0.0;
     }
 
     point_list

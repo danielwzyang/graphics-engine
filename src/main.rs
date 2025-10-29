@@ -229,7 +229,7 @@ fn main() -> Result<(), Box<dyn Error>> {
                     }
 
                     matrix::add_sphere(
-                        &mut edges,
+                        &mut polygons,
                         convert_parameter::<f32>(parts[0], path, line_number + 1)?,
                         convert_parameter::<f32>(parts[1], path, line_number + 1)?,
                         convert_parameter::<f32>(parts[2], path, line_number + 1)?,
