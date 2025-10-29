@@ -13,19 +13,38 @@ pub fn add_polygon(m: &mut PolygonList, x0: f32, y0: f32, z0: f32, x1: f32, y1: 
 
 pub fn render_polygons(m: &PolygonList, picture: &mut Picture, color: &(usize, usize, usize)) {
     for polygon in m.chunks(3) {
-        let [a, b, c] = polygon else { return; };
+        let a = [
+            polygon[1][0] - polygon[0][0],
+            polygon[1][1] - polygon[0][1],
+            polygon[1][2] - polygon[0][2],
+        ];
+
+        let b = [
+            polygon[2][0] - polygon[0][0],
+            polygon[2][1] - polygon[0][1],
+            polygon[2][2] - polygon[0][2],
+        ];
 
         // calculate the normal for backface culling using the cross product of two edges
-        // N = < aybz - azby, azbx - axbz, axby - aybx >
+        // normal = < aybz - azby, azbx - axbz, axby - aybx >
         let normal: [f32; 3] = [
             a[1] * b[2] - a[2] * b[1],
             a[2] * b[0] - a[0] * b[2],
             a[0] * b[1] - a[1] * b[0],
         ];
 
-        picture.draw_line(a[0] as isize, a[1] as isize, b[0] as isize, b[1] as isize, &color);
-        picture.draw_line(b[0] as isize, b[1] as isize, c[0] as isize, c[1] as isize, &color);
-        picture.draw_line(c[0] as isize, c[1] as isize, a[0] as isize, a[1] as isize, &color);
+        // if the angle between the normal and the viewer is between -90 and 90, the polygon is facing the viewer
+        // we can find the angle between the normal and the viewer using this formula
+        // |n||v|cos(theta) = dot product of n and v
+        // we can use the fact that cos() will be (+) for the angle we need
+        // |n||v| will always be (+) so we can just see if the dot product of n and v is (+) to see if cos is (+)
+        // we will set v to <0, 0, 1> so the magnitude and dot products are easy to compute
+        // the dot product of n and v when v is <0, 0, 1> is just the z component of n
+        if normal[2] > 0.0 {
+            picture.draw_line(polygon[0][0] as isize, polygon[0][1] as isize, polygon[1][0] as isize, polygon[1][1] as isize, &color);
+            picture.draw_line(polygon[1][0] as isize, polygon[1][1] as isize, polygon[2][0] as isize, polygon[2][1] as isize, &color);
+            picture.draw_line(polygon[2][0] as isize, polygon[2][1] as isize, polygon[0][0] as isize, polygon[0][1] as isize, &color);
+        }
     }
 }
 
@@ -69,13 +88,13 @@ pub fn add_sphere(m: &mut PolygonList, cx: f32, cy: f32, cz: f32, r: f32) {
     // e.g. a STEPS of 10 results in 11 points per semicircle
 
     let get = |longitude: i32, latitude: i32| -> [f32; 3] {
-        points[(longitude * STEPS + 1 + latitude) as usize]
+        points[(longitude * (STEPS + 1) + latitude) as usize]
     };
 
-    for longitude in 0..=STEPS {
+    for longitude in 0..STEPS {
         let next = if longitude == STEPS { 0 } else { longitude + 1 };
         // this is for all the polygons that aren't on the poles
-        for latitude in 1..STEPS {
+        for latitude in 1..STEPS-1 {
             let p1 = get(longitude, latitude);
             let p2 = get(longitude, latitude + 1);
             let p1_across = get(next, latitude);
@@ -95,7 +114,6 @@ pub fn add_sphere(m: &mut PolygonList, cx: f32, cy: f32, cz: f32, r: f32) {
                 p1_across[0], p1_across[1], p1_across[2],
             );
         }
-
         // two triangles at the poles
 
         // pole, p1, p1_across
@@ -141,18 +159,17 @@ fn generate_sphere_points(cx: f32, cy: f32, cz: f32, r: f32) -> Vec<[f32; 3]> {
 
 pub fn add_torus(m: &mut PolygonList, cx: f32, cy: f32, cz: f32, r1: f32, r2: f32) {
     let points = generate_torus_points(cx, cy, cz, r1, r2);
-
     // around is which circle of the torus we're currently on
     // on is which part of the circle we're currently on
     // kind of silly names but longitude and latitude didn't make sense so i had to freestyle it
     // for the torus we can just use STEPS i.e. STEPS of 10 gives 10 points on each circle
     let get = |around: i32, on: i32| -> [f32; 3] {
-        points[(around * STEPS + on) as usize]
+        points[(around * (STEPS + 1) + on) as usize]
     };
 
-    for around in 0..=STEPS {
+    for around in 0..STEPS {
         let next = if around == STEPS { 0 } else { around + 1 };
-        for on in 0..=STEPS {
+        for on in 0..STEPS {
             let p1 = get(around, on);
             let p2 = get(around, on + 1);
             let p1_across = get(next, on);
