@@ -1,12 +1,15 @@
+mod picture;
+mod colors;
+mod matrix;
+mod constants;
+mod edge_list;
+mod polygon_list;
+
 use std::error::Error;
 use std::fs::File;
 use std::io::{self, BufRead};
 use std::path::Path;
 use std::env;
-
-mod picture;
-mod colors;
-mod matrix;
 use crate::picture::Picture;
 
 #[show_image::main]
@@ -39,14 +42,15 @@ fn main() -> Result<(), Box<dyn Error>> {
             match command.as_str() {
                 "display" => {
                     picture.clear();
-                    matrix::render_edges(&edges, &mut picture, &colors::BLACK);
-                    matrix::render_polygons(&polygons, &mut picture, &colors::MAGENTA);
+                    edge_list::render_edges(&edges, &mut picture, &colors::BLACK);
+                    polygon_list::render_polygons(&polygons, &mut picture, &colors::MAGENTA);
                     println!("Waiting for display to close...");
                     picture.display()?;
                 }
 
                 "clear" => {
                     edges = matrix::new();
+                    polygons = matrix::new();
                 }
 
                 "save" => {
@@ -58,8 +62,8 @@ fn main() -> Result<(), Box<dyn Error>> {
                     }
 
                     picture.clear();
-                    matrix::render_edges(&edges, &mut picture, &colors::BLACK);
-                    matrix::render_polygons(&polygons, &mut picture, &colors::MAGENTA);
+                    edge_list::render_edges(&edges, &mut picture, &colors::BLACK);
+                    polygon_list::render_polygons(&polygons, &mut picture, &colors::MAGENTA);
                     picture.save_as_file(filename)?;
                 }
 
@@ -131,7 +135,7 @@ fn main() -> Result<(), Box<dyn Error>> {
                         panic!("{}:{} -> 'line' command expected <x0> <y0> <x1> <y1>", path, line_number + 1);
                     }
 
-                    matrix::add_edge(
+                    edge_list::add_edge(
                         &mut edges,
                         convert_parameter::<f32>(parts[0], path, line_number + 1)?,
                         convert_parameter::<f32>(parts[1], path, line_number + 1)?,
@@ -150,7 +154,7 @@ fn main() -> Result<(), Box<dyn Error>> {
                         panic!("{}:{} -> 'circle' command expected <cx> <cy> <cz> <r>", path, line_number + 1);
                     }
 
-                    matrix::add_circle(
+                    edge_list::add_circle(
                         &mut edges,
                         convert_parameter::<f32>(parts[0], path, line_number + 1)?,
                         convert_parameter::<f32>(parts[1], path, line_number + 1)?,
@@ -167,7 +171,7 @@ fn main() -> Result<(), Box<dyn Error>> {
                         panic!("{}:{} -> 'hermite' command expected <x0> <y0> <x1> <y1> <rx0> <ry0> <rx1> <ry1>", path, line_number + 1);
                     }
 
-                    matrix::add_hermite_curve(
+                    edge_list::add_hermite_curve(
                         &mut edges,
                         convert_parameter::<f32>(parts[0], path, line_number + 1)?,
                         convert_parameter::<f32>(parts[1], path, line_number + 1)?,
@@ -188,7 +192,7 @@ fn main() -> Result<(), Box<dyn Error>> {
                         panic!("{}:{} -> 'bezier' command expected <x0> <y0> <x1> <y1> <x2> <y2> <x3> <y3>", path, line_number + 1);
                     }
 
-                    matrix::add_bezier_curve(
+                    edge_list::add_bezier_curve(
                         &mut edges,
                         convert_parameter::<f32>(parts[0], path, line_number + 1)?,
                         convert_parameter::<f32>(parts[1], path, line_number + 1)?,
@@ -209,7 +213,7 @@ fn main() -> Result<(), Box<dyn Error>> {
                         panic!("{}:{} -> 'box' command expected <x> <y> <z> <w> <h> <d>", path, line_number + 1);
                     }
 
-                    matrix::add_box(
+                    polygon_list::add_box(
                         &mut polygons,
                         convert_parameter::<f32>(parts[0], path, line_number + 1)?,
                         convert_parameter::<f32>(parts[1], path, line_number + 1)?,
@@ -228,7 +232,7 @@ fn main() -> Result<(), Box<dyn Error>> {
                         panic!("{}:{} -> 'sphere' command expected <cx> <cy> <cz> <r>", path, line_number + 1);
                     }
 
-                    matrix::add_sphere(
+                    polygon_list::add_sphere(
                         &mut polygons,
                         convert_parameter::<f32>(parts[0], path, line_number + 1)?,
                         convert_parameter::<f32>(parts[1], path, line_number + 1)?,
@@ -245,7 +249,7 @@ fn main() -> Result<(), Box<dyn Error>> {
                         panic!("{}:{} -> 'torus' command expected <cx> <cy> <cz> <r1> <r2>", path, line_number + 1);
                     }
 
-                    matrix::add_torus(
+                    polygon_list::add_torus(
                         &mut polygons,
                         convert_parameter::<f32>(parts[0], path, line_number + 1)?,
                         convert_parameter::<f32>(parts[1], path, line_number + 1)?,
