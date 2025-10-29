@@ -352,32 +352,20 @@ pub fn add_box(m: &mut Matrix, x: f32, y: f32, z: f32, w: f32, h: f32, d: f32) {
     );    
 }
 
-fn draw_points(m: &mut Matrix, points: Vec<[f32; 3]>) {
-    // basically just draw a tiny line to make a point
-    for point in points {
-        add_edge(
-            m,
-            point[0], point[1], point[2],
-            point[0], point[1], point[2], 
-        )
-    }
-}
-
 pub fn add_sphere(m: &mut Matrix, cx: f32, cy: f32, cz: f32, r: f32) {
     let points = generate_sphere_points(cx, cy, cz, r);
-    println!("{:?}", points);
 
+    // we do STEPS + 1 because the semicircle generates one extra point for the south pole the way I coded it
     // e.g. a STEPS of 10 results in 11 points per semicircle
-    let steps = STEPS + 1;
     
     let get = |longitude: i32, latitude: i32| -> [f32; 3] {
-        points[(longitude * steps + latitude) as usize]
+        points[(longitude * STEPS + 1 + latitude) as usize]
     };
 
-    for longitude in 0..steps {
-        let next = if longitude + 1 == steps { 0 } else { longitude + 1 };
+    for longitude in 0..=STEPS {
+        let next = if longitude == STEPS { 0 } else { longitude + 1 };
         // this is for all the polygons that aren't on the poles
-        for latitude in 1..steps-1 {
+        for latitude in 1..STEPS {
             let p1 = get(longitude, latitude);
             let p2 = get(longitude, latitude + 1);
             let p1_across = get(next, latitude);
@@ -411,9 +399,9 @@ pub fn add_sphere(m: &mut Matrix, cx: f32, cy: f32, cz: f32, r: f32) {
         );
 
         // pole, pminus1_across, pminus1
-        let pole = get(longitude, steps - 1);
-        let p = get(longitude, steps - 2);
-        let p_across = get(next, steps - 2);
+        let pole = get(longitude, STEPS);
+        let p = get(longitude, STEPS - 1);
+        let p_across = get(next, STEPS - 1);
         add_polygon(m, 
             pole[0], pole[1], pole[2],
             p_across[0], p_across[1], p_across[2],
@@ -443,7 +431,38 @@ fn generate_sphere_points(cx: f32, cy: f32, cz: f32, r: f32) -> Vec<[f32; 3]> {
 
 pub fn add_torus(m: &mut Matrix, cx: f32, cy: f32, cz: f32, r1: f32, r2: f32) {
     let points = generate_torus_points(cx, cy, cz, r1, r2);
-    draw_points(m, points);
+
+    // around is which circle of the torus we're currently on
+    // on is which part of the circle we're currently on
+    // kind of silly names but longitude and latitude didn't make sense so i had to freestyle it
+    // for the torus we can just use STEPS i.e. STEPS of 10 gives 10 points on each circle
+    let get = |around: i32, on: i32| -> [f32; 3] {
+        points[(around * STEPS + on) as usize]
+    };
+
+    for around in 0..=STEPS {
+        let next = if around == STEPS { 0 } else { around + 1 };
+        for on in 0..=STEPS {
+            let p1 = get(around, on);
+            let p2 = get(around, on + 1);
+            let p1_across = get(next, on);
+            let p2_across = get(next, on + 1);
+            
+            // p1, p2, p2_across
+            add_polygon(m, 
+                p1[0], p1[1], p1[2],
+                p2[0], p2[1], p2[2],
+                p2_across[0], p2_across[1], p2_across[2],
+            );
+
+            // p1, p2_across, p1_across
+            add_polygon(m, 
+                p1[0], p1[1], p1[2],
+                p2_across[0], p2_across[1], p2_across[2],
+                p1_across[0], p1_across[1], p1_across[2],
+            );
+        }
+    }
 }
 
 fn generate_torus_points(cx: f32, cy: f32, cz: f32, r1: f32, r2: f32) -> Vec<[f32; 3]> {
