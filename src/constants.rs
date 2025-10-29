@@ -30,3 +30,6 @@ pub const CUBE: [(usize, usize, usize); 12] = [
     (7, 5, 6),
     (7, 4, 5),
 ];
+
+// the vector from the object to the viewer
+pub const VIEWER: [f32; 3] = [0.0, 0.0, 1.0]; 

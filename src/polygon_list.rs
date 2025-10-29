@@ -1,25 +1,35 @@
-type Matrix = Vec<[f32; 4]>;
+type PolygonList = Vec<[f32; 4]>;
 
 use std::f32::consts::PI;
 use crate::picture::Picture;
 use crate::constants::{STEPS, CUBE};
 use crate::matrix::add_point;
 
-pub fn add_polygon(m: &mut Matrix, x0: f32, y0: f32, z0: f32, x1: f32, y1: f32, z1: f32, x2: f32, y2: f32, z2: f32) {
+pub fn add_polygon(m: &mut PolygonList, x0: f32, y0: f32, z0: f32, x1: f32, y1: f32, z1: f32, x2: f32, y2: f32, z2: f32) {
     add_point(m, x0, y0, z0, 1.0);
     add_point(m, x1, y1, z1, 1.0);
     add_point(m, x2, y2, z2, 1.0);
 }
 
-pub fn render_polygons(m: &Matrix, picture: &mut Picture, color: &(usize, usize, usize)) {
-    for edge in m.chunks(3) {
-        picture.draw_line(edge[0][0] as isize, edge[0][1] as isize, edge[1][0] as isize, edge[1][1] as isize, &color);
-        picture.draw_line(edge[1][0] as isize, edge[1][1] as isize, edge[2][0] as isize, edge[2][1] as isize, &color);
-        picture.draw_line(edge[2][0] as isize, edge[2][1] as isize, edge[0][0] as isize, edge[0][1] as isize, &color);
+pub fn render_polygons(m: &PolygonList, picture: &mut Picture, color: &(usize, usize, usize)) {
+    for polygon in m.chunks(3) {
+        let [a, b, c] = polygon else { return; };
+
+        // calculate the normal for backface culling using the cross product of two edges
+        // N = < aybz - azby, azbx - axbz, axby - aybx >
+        let normal: [f32; 3] = [
+            a[1] * b[2] - a[2] * b[1],
+            a[2] * b[0] - a[0] * b[2],
+            a[0] * b[1] - a[1] * b[0],
+        ];
+
+        picture.draw_line(a[0] as isize, a[1] as isize, b[0] as isize, b[1] as isize, &color);
+        picture.draw_line(b[0] as isize, b[1] as isize, c[0] as isize, c[1] as isize, &color);
+        picture.draw_line(c[0] as isize, c[1] as isize, a[0] as isize, a[1] as isize, &color);
     }
 }
 
-pub fn add_box(m: &mut Matrix, x: f32, y: f32, z: f32, w: f32, h: f32, d: f32) {
+pub fn add_box(m: &mut PolygonList, x: f32, y: f32, z: f32, w: f32, h: f32, d: f32) {
     /*
         4 ---- 5
       / |    / |
@@ -52,7 +62,7 @@ pub fn add_box(m: &mut Matrix, x: f32, y: f32, z: f32, w: f32, h: f32, d: f32) {
     }
 }
 
-pub fn add_sphere(m: &mut Matrix, cx: f32, cy: f32, cz: f32, r: f32) {
+pub fn add_sphere(m: &mut PolygonList, cx: f32, cy: f32, cz: f32, r: f32) {
     let points = generate_sphere_points(cx, cy, cz, r);
 
     // we do STEPS + 1 because the semicircle generates one extra point for the south pole the way I coded it
@@ -129,7 +139,7 @@ fn generate_sphere_points(cx: f32, cy: f32, cz: f32, r: f32) -> Vec<[f32; 3]> {
     point_list
 }
 
-pub fn add_torus(m: &mut Matrix, cx: f32, cy: f32, cz: f32, r1: f32, r2: f32) {
+pub fn add_torus(m: &mut PolygonList, cx: f32, cy: f32, cz: f32, r1: f32, r2: f32) {
     let points = generate_torus_points(cx, cy, cz, r1, r2);
 
     // around is which circle of the torus we're currently on
