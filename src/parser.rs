@@ -54,6 +54,11 @@ pub fn read_script(path: &str) -> Result<(), Box<dyn Error>> {
                     transformation_matrix = matrix::identity();
                 }
 
+                "apply" => {
+                    matrix::multiply(&transformation_matrix, &mut edges);
+                    matrix::multiply(&transformation_matrix, &mut polygons);
+                }
+
                 "scale" => {
                     let (line_number, arguments) = iterator.next().unwrap();
                     let parts: Vec<&str> = arguments.split_whitespace().collect();
@@ -62,12 +67,9 @@ pub fn read_script(path: &str) -> Result<(), Box<dyn Error>> {
                         panic!("{}:{} -> 'scale' command expected <x> <y> <z>", path, line_number + 1);
                     }
 
-                    matrix::dilate(
-                        &mut transformation_matrix,
-                        convert_parameter::<f32>(parts[0], path, line_number + 1)?,
-                        convert_parameter::<f32>(parts[1], path, line_number + 1)?,
-                        convert_parameter::<f32>(parts[2], path, line_number + 1)?,
-                    );
+                    let p = convert_parameters::<f32>(parts, path, line_number + 1)?;
+
+                    matrix::dilate(&mut transformation_matrix, p[0], p[1], p[2]);
                 }
 
                 "move" => {
@@ -77,12 +79,10 @@ pub fn read_script(path: &str) -> Result<(), Box<dyn Error>> {
                     if parts.len() < 3 {
                         panic!("{}:{} -> 'move' command expected <x> <y> <z>", path, line_number + 1);
                     }
-                    matrix::translate(
-                        &mut transformation_matrix,
-                        convert_parameter::<f32>(parts[0], path, line_number + 1)?,
-                        convert_parameter::<f32>(parts[1], path, line_number + 1)?,
-                        convert_parameter::<f32>(parts[2], path, line_number + 1)?,
-                    );
+
+                    let p = convert_parameters::<f32>(parts, path, line_number + 1)?;
+
+                    matrix::translate(&mut transformation_matrix, p[0], p[1], p[2]);
                 }
 
                 "rotate" => {
@@ -105,11 +105,6 @@ pub fn read_script(path: &str) -> Result<(), Box<dyn Error>> {
                     );
                 }
 
-                "apply" => {
-                    matrix::multiply(&transformation_matrix, &mut edges);
-                    matrix::multiply(&transformation_matrix, &mut polygons);
-                }
-
                 "line" => {
                     let (line_number, arguments) = iterator.next().unwrap();
                     let parts: Vec<&str> = arguments.split_whitespace().collect();
@@ -118,15 +113,9 @@ pub fn read_script(path: &str) -> Result<(), Box<dyn Error>> {
                         panic!("{}:{} -> 'line' command expected <x0> <y0> <x1> <y1>", path, line_number + 1);
                     }
 
-                    add_edge(
-                        &mut edges,
-                        convert_parameter::<f32>(parts[0], path, line_number + 1)?,
-                        convert_parameter::<f32>(parts[1], path, line_number + 1)?,
-                        convert_parameter::<f32>(parts[2], path, line_number + 1)?,
-                        convert_parameter::<f32>(parts[3], path, line_number + 1)?,
-                        convert_parameter::<f32>(parts[4], path, line_number + 1)?,
-                        convert_parameter::<f32>(parts[5], path, line_number + 1)?,
-                    );
+                    let p = convert_parameters::<f32>(parts, path, line_number + 1)?;
+
+                    add_edge(&mut edges, p[0], p[1], p[2], p[3], p[4], p[5]);
                 }
 
                 "circle" => {
@@ -137,13 +126,9 @@ pub fn read_script(path: &str) -> Result<(), Box<dyn Error>> {
                         panic!("{}:{} -> 'circle' command expected <cx> <cy> <cz> <r>", path, line_number + 1);
                     }
 
-                    add_circle(
-                        &mut edges,
-                        convert_parameter::<f32>(parts[0], path, line_number + 1)?,
-                        convert_parameter::<f32>(parts[1], path, line_number + 1)?,
-                        convert_parameter::<f32>(parts[2], path, line_number + 1)?,
-                        convert_parameter::<f32>(parts[3], path, line_number + 1)?,
-                    );
+                    let p = convert_parameters::<f32>(parts, path, line_number + 1)?;
+
+                    add_circle(&mut edges, p[0], p[1], p[2], p[3]);
                 }
 
                 "hermite" => {
@@ -154,17 +139,9 @@ pub fn read_script(path: &str) -> Result<(), Box<dyn Error>> {
                         panic!("{}:{} -> 'hermite' command expected <x0> <y0> <x1> <y1> <rx0> <ry0> <rx1> <ry1>", path, line_number + 1);
                     }
 
-                    add_hermite_curve(
-                        &mut edges,
-                        convert_parameter::<f32>(parts[0], path, line_number + 1)?,
-                        convert_parameter::<f32>(parts[1], path, line_number + 1)?,
-                        convert_parameter::<f32>(parts[2], path, line_number + 1)?,
-                        convert_parameter::<f32>(parts[3], path, line_number + 1)?,
-                        convert_parameter::<f32>(parts[4], path, line_number + 1)?,
-                        convert_parameter::<f32>(parts[5], path, line_number + 1)?,
-                        convert_parameter::<f32>(parts[6], path, line_number + 1)?,
-                        convert_parameter::<f32>(parts[7], path, line_number + 1)?,
-                    );
+                    let p = convert_parameters::<f32>(parts, path, line_number + 1)?;
+
+                    add_hermite_curve(&mut edges, p[0], p[1], p[2], p[3], p[4], p[5], p[7], p[8]);
                 }
 
                 "bezier" => {
@@ -175,17 +152,9 @@ pub fn read_script(path: &str) -> Result<(), Box<dyn Error>> {
                         panic!("{}:{} -> 'bezier' command expected <x0> <y0> <x1> <y1> <x2> <y2> <x3> <y3>", path, line_number + 1);
                     }
 
-                    add_bezier_curve(
-                        &mut edges,
-                        convert_parameter::<f32>(parts[0], path, line_number + 1)?,
-                        convert_parameter::<f32>(parts[1], path, line_number + 1)?,
-                        convert_parameter::<f32>(parts[2], path, line_number + 1)?,
-                        convert_parameter::<f32>(parts[3], path, line_number + 1)?,
-                        convert_parameter::<f32>(parts[4], path, line_number + 1)?,
-                        convert_parameter::<f32>(parts[5], path, line_number + 1)?,
-                        convert_parameter::<f32>(parts[6], path, line_number + 1)?,
-                        convert_parameter::<f32>(parts[7], path, line_number + 1)?,
-                    );
+                    let p = convert_parameters::<f32>(parts, path, line_number + 1)?;
+
+                    add_bezier_curve(&mut edges, p[0], p[1], p[2], p[3], p[4], p[5], p[6], p[7]);
                 }
 
                 "polygon" => {
@@ -196,18 +165,9 @@ pub fn read_script(path: &str) -> Result<(), Box<dyn Error>> {
                         panic!("{}:{} -> 'polygon' command expected <x0> <y0> <z0> <x1> <y1> <z1> <x2> <y2> <z2>", path, line_number + 1);
                     }
 
-                    add_polygon(
-                        &mut polygons,
-                        convert_parameter::<f32>(parts[0], path, line_number + 1)?,
-                        convert_parameter::<f32>(parts[1], path, line_number + 1)?,
-                        convert_parameter::<f32>(parts[2], path, line_number + 1)?,
-                        convert_parameter::<f32>(parts[3], path, line_number + 1)?,
-                        convert_parameter::<f32>(parts[4], path, line_number + 1)?,
-                        convert_parameter::<f32>(parts[5], path, line_number + 1)?,
-                        convert_parameter::<f32>(parts[6], path, line_number + 1)?,
-                        convert_parameter::<f32>(parts[7], path, line_number + 1)?,
-                        convert_parameter::<f32>(parts[8], path, line_number + 1)?,
-                    );
+                    let p = convert_parameters::<f32>(parts, path, line_number + 1)?;
+
+                    add_polygon(&mut polygons, p[0], p[1], p[2], p[3], p[4], p[5], p[6], p[7], p[8]);
                 }
 
                 "box" => {
@@ -218,15 +178,9 @@ pub fn read_script(path: &str) -> Result<(), Box<dyn Error>> {
                         panic!("{}:{} -> 'box' command expected <x> <y> <z> <w> <h> <d>", path, line_number + 1);
                     }
 
-                    add_box(
-                        &mut polygons,
-                        convert_parameter::<f32>(parts[0], path, line_number + 1)?,
-                        convert_parameter::<f32>(parts[1], path, line_number + 1)?,
-                        convert_parameter::<f32>(parts[2], path, line_number + 1)?,
-                        convert_parameter::<f32>(parts[3], path, line_number + 1)?,
-                        convert_parameter::<f32>(parts[4], path, line_number + 1)?,
-                        convert_parameter::<f32>(parts[5], path, line_number + 1)?,
-                    );
+                    let p = convert_parameters::<f32>(parts, path, line_number + 1)?;
+
+                    add_box(&mut polygons, p[0], p[1], p[2], p[3], p[4], p[5]);
                 }
 
                 "sphere" => {
@@ -237,13 +191,9 @@ pub fn read_script(path: &str) -> Result<(), Box<dyn Error>> {
                         panic!("{}:{} -> 'sphere' command expected <cx> <cy> <cz> <r>", path, line_number + 1);
                     }
 
-                    add_sphere(
-                        &mut polygons,
-                        convert_parameter::<f32>(parts[0], path, line_number + 1)?,
-                        convert_parameter::<f32>(parts[1], path, line_number + 1)?,
-                        convert_parameter::<f32>(parts[2], path, line_number + 1)?,
-                        convert_parameter::<f32>(parts[3], path, line_number + 1)?,
-                    );
+                    let p = convert_parameters::<f32>(parts, path, line_number + 1)?;
+
+                    add_sphere(&mut polygons, p[0], p[1], p[2], p[3]);
                 }
 
                 "torus" => {
@@ -254,14 +204,9 @@ pub fn read_script(path: &str) -> Result<(), Box<dyn Error>> {
                         panic!("{}:{} -> 'torus' command expected <cx> <cy> <cz> <r1> <r2>", path, line_number + 1);
                     }
 
-                    add_torus(
-                        &mut polygons,
-                        convert_parameter::<f32>(parts[0], path, line_number + 1)?,
-                        convert_parameter::<f32>(parts[1], path, line_number + 1)?,
-                        convert_parameter::<f32>(parts[2], path, line_number + 1)?,
-                        convert_parameter::<f32>(parts[3], path, line_number + 1)?,
-                        convert_parameter::<f32>(parts[4], path, line_number + 1)?,
-                    );
+                    let p = convert_parameters::<f32>(parts, path, line_number + 1)?;
+
+                    add_torus(&mut polygons, p[0], p[1], p[2], p[3], p[4]);
                 }
 
                 unknown => {
@@ -278,6 +223,14 @@ fn read_lines<P>(filename: P) -> io::Result<io::Lines<io::BufReader<File>>>
 where P: AsRef<Path>, {
     let file = File::open(filename)?;
     Ok(io::BufReader::new(file).lines())
+}
+
+fn convert_parameters<T: std::str::FromStr>(parameters: Vec<&str>, path: &str, line_number: usize) -> Result<Vec<T>, Box<dyn Error>> {
+    let mut res = vec![];
+    for parameter in parameters {
+        res.push(convert_parameter::<T>(parameter, path, line_number)?);
+    }
+    Ok(res)
 }
 
 fn convert_parameter<T: std::str::FromStr>(parameter: &str, path: &str, line_number: usize) -> Result<T, Box<dyn Error>> {
