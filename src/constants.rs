@@ -1,5 +1,19 @@
+#![allow(dead_code)] 
+
+// colors
+pub const WHITE: (usize, usize, usize) = (255, 255, 255);
+pub const BLACK: (usize, usize, usize) = (0, 0, 0);
+
+pub const RED: (usize, usize, usize) = (255, 0, 0);
+pub const GREEN: (usize, usize, usize) = (0, 255, 0);
+pub const BLUE: (usize, usize, usize) = (0, 0, 255);
+
+pub const CYAN: (usize, usize, usize) = (0, 255, 255);
+pub const YELLOW: (usize, usize, usize) = (255, 255, 0);
+pub const MAGENTA: (usize, usize, usize) = (255, 0, 255);
+
 // the number of steps made during a parametric loop
-pub const STEPS: i32 = 10;
+pub const STEPS: i32 = 20;
 
 // cubic hermite and bezier matrices to find polynomial coefficients
 pub const HERMITE: [[f32; 4]; 4] = [

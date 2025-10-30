@@ -1,5 +1,5 @@
 RUN ?= WINIT_UNIX_BACKEND=x11 cargo run
-CUSTOM ?= scripts/stonehenge
+CUSTOM ?= scripts/dino
 
 default:
 	${RUN} scripts/test
