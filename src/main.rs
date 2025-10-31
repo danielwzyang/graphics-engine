@@ -12,8 +12,8 @@ fn main() -> Result<(), Box<dyn Error>> {
     let arguments: Vec<String> = env::args().collect();
 
     let path = if arguments.len() < 2 {
-        println!("A path to a script wasn't provided. 'scripts/dino' was chosen by default.");
-        "scripts/dino"
+        println!("A path to a script wasn't provided. '{}' was chosen by default.", &constants::DEFAULT_SCRIPT);
+        &String::from(constants::DEFAULT_SCRIPT)
     } else { &arguments[1] };
 
     parser::read_script(path)

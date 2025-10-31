@@ -1,4 +1,7 @@
-#![allow(dead_code)] 
+#![allow(dead_code)]
+
+// default script if one isn't provided
+pub const DEFAULT_SCRIPT: &str = "scripts/dino";
 
 // colors
 pub const WHITE: (usize, usize, usize) = (255, 255, 255);
