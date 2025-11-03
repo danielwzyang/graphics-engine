@@ -4,6 +4,9 @@ CUSTOM ?= scripts/dino
 default:
 	${RUN} scripts/test
 
+run:
+	${RUN} ${SCRIPT}
+
 custom:
 	${RUN} ${CUSTOM}
 

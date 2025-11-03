@@ -1,19 +1,26 @@
 # a really bad stonehenge
 
+push
+move
+300 150 0
+rotate
+x 20
+rotate
+y 40
+
 # smaller structure on the left
+push
+move
+-200 0 50
+rotate
+y 15
 box
 0 120 0 50 120 50
 box
 80 120 0 50 120 50
 box
 15 140 0 100 20 50
-
-ident
-rotate
-y 15
-move
--200 0 50
-apply
+pop
 
 # bigger structure that the sun passes through
 box
@@ -28,15 +35,6 @@ line
 # the sun behind the bigger structure
 sphere
 65 100 -250 50
-
-ident
-rotate
-y 40
-rotate
-x 20
-move
-300 150 0
-apply
 
 save
 stonehenge.png

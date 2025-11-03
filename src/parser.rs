@@ -148,7 +148,7 @@ pub fn read_script(path: &str) -> Result<(), Box<dyn Error>> {
 
                     let p = convert_parameters::<f32>(parts, path, line_number + 1)?;
 
-                    add_hermite_curve(&mut edges, p[0], p[1], p[2], p[3], p[4], p[5], p[7], p[8]);
+                    add_hermite_curve(&mut edges, p[0], p[1], p[2], p[3], p[4], p[5], p[6], p[7]);
                     matrix::multiply(&peek(&coordinate_stack), &mut edges);
                     render_edges(&edges, &mut picture, &constants::BLUE);
                     edges = matrix::new();

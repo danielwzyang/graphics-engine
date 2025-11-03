@@ -11,6 +11,7 @@ pub fn new() -> CoordinateStack {
 
 pub fn peek(stack: &CoordinateStack) -> Matrix {
     if stack.is_empty() {
+        println!("Stack is empty, defaulting to identity matrix.");
         matrix::identity()
     } else {
         stack.last().unwrap().to_vec()
@@ -20,6 +21,8 @@ pub fn peek(stack: &CoordinateStack) -> Matrix {
 pub fn pop(stack: &mut CoordinateStack) {
     if !stack.is_empty() {
         stack.pop();
+    } else {
+        println!("Stack was popped when empty.");
     }
 }
 
@@ -27,7 +30,7 @@ pub fn push(stack: &mut CoordinateStack) {
     if let Some(top) = stack.last() {
         stack.push(top.clone());
     } else {
-        stack.push(matrix::identity())
+        stack.push(matrix::identity());
     }
 }
 

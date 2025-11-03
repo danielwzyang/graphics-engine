@@ -6,6 +6,8 @@ y 20
 sphere
 0 0 0 50
 pop
+scale
+2 2 2
 sphere
 0 0 0 50
 display

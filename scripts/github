@@ -1,5 +1,10 @@
-# taken from some random svg
+# do some transformations to make it centered
+scale
+2 2 2
+move
+5 -5 0
 
+# taken from some random svg
 bezier
 120.0 230.0 64.75 230.0 20.0 185.25 20.0 130.0
 bezier
@@ -53,15 +58,6 @@ bezier
 bezier
 220.0 130.0 220.0 185.25 175.25 230.0 120.0 230.0
 
-# do some transformations to make it centered
-ident
-move
-5 -5 0
-scale
-2 2 2
-apply
-
-display
-
 save
 github.png
+display

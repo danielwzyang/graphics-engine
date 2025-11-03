@@ -1,5 +1,14 @@
 # edge list is from chatgpt (i did not want to do all the monkey work)
 
+move
+250 250 0
+rotate
+x 30
+rotate
+y 45
+scale
+100 100 100
+
 line
 -1 -1 -1 -0.618 -1.618 0
 line
@@ -61,18 +70,6 @@ line
 line
 0 -0.618 -1.618 0 0.618 -1.618
 
-ident
-scale
-100 100 100
-rotate
-y 45
-rotate
-x 30
-move
-250 250 0
-apply
-
-display
-
 save
 dodecahedron.png
+display
