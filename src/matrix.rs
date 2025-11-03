@@ -57,7 +57,7 @@ pub fn add_point(m: &mut Matrix, x: f32, y: f32, z: f32, w: f32) {
     m.push([x, y, z, w]);
 }
 
-pub fn translate(m: &mut Matrix, a: f32, b: f32, c: f32) {
+pub fn translation(a: f32, b: f32, c: f32) -> Matrix {
     let mut transformation_matrix = identity();
 
     // x, y, and z of last point are a, b, and c
@@ -72,10 +72,10 @@ pub fn translate(m: &mut Matrix, a: f32, b: f32, c: f32) {
     transformation_matrix[3][1] = b;
     transformation_matrix[3][2] = c;
 
-    multiply(&transformation_matrix, m)
+    transformation_matrix
 }
 
-pub fn dilate(m: &mut Matrix, a: f32, b: f32, c: f32) {
+pub fn dilation(a: f32, b: f32, c: f32) -> Matrix {
     let mut transformation_matrix = identity();
 
     // 1s are replaced by a, b, and c
@@ -90,10 +90,10 @@ pub fn dilate(m: &mut Matrix, a: f32, b: f32, c: f32) {
     transformation_matrix[1][1] = b;
     transformation_matrix[2][2] = c;
 
-    multiply(&transformation_matrix, m)
+    transformation_matrix
 }
 
-pub fn rotate(m: &mut Matrix, axis: Rotation, degrees: f32) {
+pub fn rotation(axis: Rotation, degrees: f32) -> Matrix {
     let mut transformation_matrix = identity();
     let theta = degrees * (PI / 180.0);
 
@@ -141,5 +141,5 @@ pub fn rotate(m: &mut Matrix, axis: Rotation, degrees: f32) {
         }
     }
 
-    multiply(&transformation_matrix, m)
+    transformation_matrix
 }

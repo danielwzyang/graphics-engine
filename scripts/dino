@@ -1,5 +1,16 @@
 # https://www.thingiverse.com/thing:913069
 
+move
+270 100 0
+rotate
+y 45
+rotate
+x -90
+scale
+5 5 5
+move
+-50 -70 0
+
 polygon
 41.4069 106.153 3.405 43.4946 110.008 0.630002 39.581 108.502 0.135
 polygon
@@ -1301,17 +1312,6 @@ polygon
 polygon
 40.2919 55.3596 0 45.2197 55.2721 0 48.1346 54.7838 0.780003
 
-ident
-move
--50 -70 0
-scale
-5 5 5
-rotate
-x -90
-rotate
-y 45
-move
-270 100 0
-apply
-
+save
+dino.png
 display

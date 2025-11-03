@@ -4,6 +4,7 @@ mod matrix;
 mod edge_list;
 mod polygon_list;
 mod parser;
+mod coordinate_stack;
 
 use std::error::Error;
 use std::env;

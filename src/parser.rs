@@ -1,4 +1,5 @@
-use crate::{matrix, constants};
+use crate::{matrix, constants, coordinate_stack};
+use crate::coordinate_stack::{peek, pop, push, apply_transformation};
 use crate::picture::Picture;
 use crate::edge_list::{render_edges, add_bezier_curve, add_circle, add_edge, add_hermite_curve};
 use crate::polygon_list::{add_box, add_polygon, add_sphere, add_torus, render_polygons};
@@ -8,7 +9,7 @@ pub fn read_script(path: &str) -> Result<(), Box<dyn Error>> {
     let mut picture = Picture::new(500, 500, 255, &constants::WHITE);
     let mut edges = matrix::new();
     let mut polygons = matrix::new();
-    let mut transformation_matrix = matrix::identity();
+    let mut coordinate_stack = coordinate_stack::new();
 
     if let Ok(lines) = read_lines(path) {
         // create an iterator to read through lines
@@ -24,16 +25,12 @@ pub fn read_script(path: &str) -> Result<(), Box<dyn Error>> {
             // match commands
             match command.as_str() {
                 "display" => {
-                    picture.clear();
-                    render_edges(&edges, &mut picture, &constants::BLACK);
-                    render_polygons(&polygons, &mut picture, &constants::BLUE);
                     println!("Waiting for display to close...");
                     picture.display()?;
                 }
 
                 "clear" => {
-                    edges = matrix::new();
-                    polygons = matrix::new();
+                    picture.clear();
                 }
 
                 "save" => {
@@ -44,19 +41,15 @@ pub fn read_script(path: &str) -> Result<(), Box<dyn Error>> {
                         panic!("{}:{} -> 'save' command expected <filepath>", path, line_number + 1);
                     }
 
-                    picture.clear();
-                    render_edges(&edges, &mut picture, &constants::BLACK);
-                    render_polygons(&polygons, &mut picture, &constants::BLUE);
                     picture.save_as_file(filename)?;
                 }
 
-                "ident" => {
-                    transformation_matrix = matrix::identity();
+                "pop" => {
+                    pop(&mut coordinate_stack);
                 }
 
-                "apply" => {
-                    matrix::multiply(&transformation_matrix, &mut edges);
-                    matrix::multiply(&transformation_matrix, &mut polygons);
+                "push" => {
+                    push(&mut coordinate_stack);
                 }
 
                 "scale" => {
@@ -69,7 +62,10 @@ pub fn read_script(path: &str) -> Result<(), Box<dyn Error>> {
 
                     let p = convert_parameters::<f32>(parts, path, line_number + 1)?;
 
-                    matrix::dilate(&mut transformation_matrix, p[0], p[1], p[2]);
+                    apply_transformation(
+                        &mut coordinate_stack,
+                        matrix::dilation(p[0], p[1], p[2]),
+                    );
                 }
 
                 "move" => {
@@ -82,7 +78,10 @@ pub fn read_script(path: &str) -> Result<(), Box<dyn Error>> {
 
                     let p = convert_parameters::<f32>(parts, path, line_number + 1)?;
 
-                    matrix::translate(&mut transformation_matrix, p[0], p[1], p[2]);
+                    apply_transformation(
+                        &mut coordinate_stack,
+                        matrix::translation(p[0], p[1], p[2]),
+                    );
                 }
 
                 "rotate" => {
@@ -93,16 +92,18 @@ pub fn read_script(path: &str) -> Result<(), Box<dyn Error>> {
                         panic!("{}:{} -> 'rotate' command expected <x | y | z> <degrees>", path, line_number + 1);
                     }
 
-                    matrix::rotate(
-                        &mut transformation_matrix,
-                        match parts[0] {
-                            "x" => matrix::Rotation::X,
-                            "y" => matrix::Rotation::Y,
-                            "z" => matrix::Rotation::Z,
-                            parameter => panic!("{}:{} -> invalid parameter: '{}'. expected <x | y | z>", path, line_number + 1, parameter)
-                        },
-                        convert_parameter::<f32>(parts[1], path, line_number + 1)?,
-                    );
+                    apply_transformation(
+                        &mut coordinate_stack,
+                        matrix::rotation(
+                            match parts[0] {
+                                "x" => matrix::Rotation::X,
+                                "y" => matrix::Rotation::Y,
+                                "z" => matrix::Rotation::Z,
+                                parameter => panic!("{}:{} -> invalid parameter: '{}'. expected <x | y | z>", path, line_number + 1, parameter)
+                            },
+                            convert_parameter::<f32>(parts[1], path, line_number + 1)?,
+                        ),
+                    )
                 }
 
                 "line" => {
@@ -116,6 +117,9 @@ pub fn read_script(path: &str) -> Result<(), Box<dyn Error>> {
                     let p = convert_parameters::<f32>(parts, path, line_number + 1)?;
 
                     add_edge(&mut edges, p[0], p[1], p[2], p[3], p[4], p[5]);
+                    matrix::multiply(&peek(&coordinate_stack), &mut edges);
+                    render_edges(&edges, &mut picture, &constants::BLUE);
+                    edges = matrix::new();
                 }
 
                 "circle" => {
@@ -129,6 +133,9 @@ pub fn read_script(path: &str) -> Result<(), Box<dyn Error>> {
                     let p = convert_parameters::<f32>(parts, path, line_number + 1)?;
 
                     add_circle(&mut edges, p[0], p[1], p[2], p[3]);
+                    matrix::multiply(&peek(&coordinate_stack), &mut edges);
+                    render_edges(&edges, &mut picture, &constants::BLUE);
+                    edges = matrix::new();
                 }
 
                 "hermite" => {
@@ -142,6 +149,9 @@ pub fn read_script(path: &str) -> Result<(), Box<dyn Error>> {
                     let p = convert_parameters::<f32>(parts, path, line_number + 1)?;
 
                     add_hermite_curve(&mut edges, p[0], p[1], p[2], p[3], p[4], p[5], p[7], p[8]);
+                    matrix::multiply(&peek(&coordinate_stack), &mut edges);
+                    render_edges(&edges, &mut picture, &constants::BLUE);
+                    edges = matrix::new();
                 }
 
                 "bezier" => {
@@ -155,6 +165,9 @@ pub fn read_script(path: &str) -> Result<(), Box<dyn Error>> {
                     let p = convert_parameters::<f32>(parts, path, line_number + 1)?;
 
                     add_bezier_curve(&mut edges, p[0], p[1], p[2], p[3], p[4], p[5], p[6], p[7]);
+                    matrix::multiply(&peek(&coordinate_stack), &mut edges);
+                    render_edges(&edges, &mut picture, &constants::BLUE);
+                    edges = matrix::new();
                 }
 
                 "polygon" => {
@@ -168,6 +181,9 @@ pub fn read_script(path: &str) -> Result<(), Box<dyn Error>> {
                     let p = convert_parameters::<f32>(parts, path, line_number + 1)?;
 
                     add_polygon(&mut polygons, p[0], p[1], p[2], p[3], p[4], p[5], p[6], p[7], p[8]);
+                    matrix::multiply(&peek(&coordinate_stack), &mut polygons);
+                    render_polygons(&polygons, &mut picture, &constants::BLUE);
+                    polygons = matrix::new();
                 }
 
                 "box" => {
@@ -181,6 +197,9 @@ pub fn read_script(path: &str) -> Result<(), Box<dyn Error>> {
                     let p = convert_parameters::<f32>(parts, path, line_number + 1)?;
 
                     add_box(&mut polygons, p[0], p[1], p[2], p[3], p[4], p[5]);
+                    matrix::multiply(&peek(&coordinate_stack), &mut polygons);
+                    render_polygons(&polygons, &mut picture, &constants::BLUE);
+                    polygons = matrix::new();
                 }
 
                 "sphere" => {
@@ -194,6 +213,9 @@ pub fn read_script(path: &str) -> Result<(), Box<dyn Error>> {
                     let p = convert_parameters::<f32>(parts, path, line_number + 1)?;
 
                     add_sphere(&mut polygons, p[0], p[1], p[2], p[3]);
+                    matrix::multiply(&peek(&coordinate_stack), &mut polygons);
+                    render_polygons(&polygons, &mut picture, &constants::BLUE);
+                    polygons = matrix::new();
                 }
 
                 "torus" => {
@@ -207,10 +229,13 @@ pub fn read_script(path: &str) -> Result<(), Box<dyn Error>> {
                     let p = convert_parameters::<f32>(parts, path, line_number + 1)?;
 
                     add_torus(&mut polygons, p[0], p[1], p[2], p[3], p[4]);
+                    matrix::multiply(&peek(&coordinate_stack), &mut polygons);
+                    render_polygons(&polygons, &mut picture, &constants::BLUE);
+                    polygons = matrix::new();
                 }
 
                 unknown => {
-                    panic!("{}:{} -> error parsing '{}'.", path, line_number, unknown);
+                    println!("{}:{} -> unknown command '{}'.", path, line_number, unknown);
                 }
             }
         }
