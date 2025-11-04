@@ -2,7 +2,7 @@ type PolygonList = Vec<[f32; 4]>;
 
 use std::f32::consts::PI;
 use crate::picture::Picture;
-use crate::constants::{STEPS, CUBE};
+use crate::constants::{self, CUBE, STEPS};
 use crate::matrix::add_point;
 
 pub fn add_polygon(m: &mut PolygonList, x0: f32, y0: f32, z0: f32, x1: f32, y1: f32, z1: f32, x2: f32, y2: f32, z2: f32) {
@@ -33,17 +33,77 @@ pub fn render_polygons(m: &PolygonList, picture: &mut Picture, color: &(usize, u
             a[0] * b[1] - a[1] * b[0],
         ];
 
-        // if the angle between the normal and the viewer is between -90 and 90, the polygon is facing the viewer
-        // we can find the angle between the normal and the viewer using this formula
-        // |n||v|cos(theta) = dot product of n and v
-        // we can use the fact that cos() will be (+) for the angle we need
-        // |n||v| will always be (+) so we can just see if the dot product of n and v is (+) to see if cos is (+)
-        // we will set v to <0, 0, 1> so the magnitude and dot products are easy to compute
-        // the dot product of n and v when v is <0, 0, 1> is just the z component of n
+        /*
+            if the angle between the normal and the viewer is between -90 and 90, the polygon is facing the viewer
+            we can find the angle between the normal and the viewer using this formula
+            |n||v|cos(theta) = dot product of n and v
+            we can use the fact that cos() will be (+) for the angle we need
+            |n||v| will always be (+) so we can just see if the dot product of n and v is (+) to see if cos is (+)
+            we will set v to <0, 0, 1> so the magnitude and dot products are easy to compute
+            the dot product of n and v is just the z component of n
+        */
+
         if normal[2] > 0.0 {
-            picture.draw_line(polygon[0][0] as isize, polygon[0][1] as isize, polygon[1][0] as isize, polygon[1][1] as isize, &color);
-            picture.draw_line(polygon[1][0] as isize, polygon[1][1] as isize, polygon[2][0] as isize, polygon[2][1] as isize, &color);
-            picture.draw_line(polygon[2][0] as isize, polygon[2][1] as isize, polygon[0][0] as isize, polygon[0][1] as isize, &color);
+            scan_line_conversion(picture, &polygon[0], &polygon[1], &polygon[2], &color);
+        }
+    }
+}
+
+fn scan_line_conversion(picture: &mut Picture, p0: &[f32; 4], p1: &[f32; 4], p2: &[f32; 4], color: &(usize, usize, usize)) {
+    // sort three points by their y values so we have a bottom top and middle
+    // rounding because float to isize conversion leaves missed pixels
+    let mut b = [p0[0].round(), p0[1].round(), p0[2].round()];
+    let mut m = [p1[0].round(), p1[1].round(), p1[2].round()];
+    let mut t = [p2[0].round(), p2[1].round(), p2[2].round()];
+
+    if b[1] > m[1] {
+        std::mem::swap(&mut b, &mut m);
+    }
+    if m[1] > t[1] {
+        std::mem::swap(&mut m, &mut t);
+    }
+    if b[1] > m[1] {
+        std::mem::swap(&mut b, &mut m);
+    }
+    
+    /*
+        scan line conversion works by drawing a bunch of horizontal lines to fill in the polygon
+        lets imagine triangle BMT
+
+            T
+
+                    M
+
+                B
+        
+        as our horizontal lines move up from b, we need to figure out a delta x on each side to adjust our endpoints
+        in this case, the left side has a constant delta x which we will call dx0
+        on the right side, BM and MT have different slopes, so we will call them dx1 and dx1_1 respectively
+
+        dx0 = (xt - xb) / (yt - yb)
+        dx1 = (xm - xb) / (ym - yb)
+        dx1_1 = (xt - xm) / (yt - ym)
+    */
+
+    let mut x0 = b[0];
+    let mut x1 = b[0];
+    let mut y = b[1];
+
+    let dx0 = (t[0] - b[0]) / (t[1] - b[1]);
+    let mut dx1 = (m[0] - b[0]) / (m[1] - b[1]);
+    let dx1_1 = (t[0] - m[0]) / (t[1] - m[1]);
+
+    while y <= t[1] {
+        picture.draw_line(x0 as isize, y as isize, x1 as isize, y as isize, color);
+
+        x0 += dx0;
+        x1 += dx1;
+        y += 1.0;
+
+        // swap deltas if there's a distinct middle point
+        if y > m[1] && dx1 != dx1_1 {
+            x1 = m[0];
+            dx1 = dx1_1;
         }
     }
 }
