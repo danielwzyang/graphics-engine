@@ -52,9 +52,9 @@ pub fn render_polygons(m: &PolygonList, picture: &mut Picture, color: &(usize, u
 fn scan_line_conversion(picture: &mut Picture, p0: &[f32; 4], p1: &[f32; 4], p2: &[f32; 4], color: &(usize, usize, usize)) {
     // sort three points by their y values so we have a bottom top and middle
     // rounding because float to isize conversion leaves missed pixels
-    let mut b = [p0[0].round(), p0[1].round(), p0[2].round()];
-    let mut m = [p1[0].round(), p1[1].round(), p1[2].round()];
-    let mut t = [p2[0].round(), p2[1].round(), p2[2].round()];
+    let mut b = [p0[0].round(), p0[1].round(), p0[2]];
+    let mut m = [p1[0].round(), p1[1].round(), p1[2]];
+    let mut t = [p2[0].round(), p2[1].round(), p2[2]];
 
     if b[1] > m[1] {
         std::mem::swap(&mut b, &mut m);
@@ -65,7 +65,7 @@ fn scan_line_conversion(picture: &mut Picture, p0: &[f32; 4], p1: &[f32; 4], p2:
     if b[1] > m[1] {
         std::mem::swap(&mut b, &mut m);
     }
-    
+
     /*
         scan line conversion works by drawing a bunch of horizontal lines to fill in the polygon
         lets imagine triangle BMT
@@ -75,7 +75,7 @@ fn scan_line_conversion(picture: &mut Picture, p0: &[f32; 4], p1: &[f32; 4], p2:
                     M
 
                 B
-        
+
         as our horizontal lines move up from b, we need to figure out a delta x on each side to adjust our endpoints
         in this case, the left side has a constant delta x which we will call dx0
         on the right side, BM and MT have different slopes, so we will call them dx1 and dx1_1 respectively
