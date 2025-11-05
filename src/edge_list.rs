@@ -13,7 +13,7 @@ pub fn add_edge(m: &mut EdgeList, x0: f32, y0: f32, z0: f32, x1: f32, y1: f32, z
 pub fn render_edges(m: &EdgeList, picture: &mut Picture, color: &(usize, usize, usize)) {
     for edge in m.chunks(2) {
         // loop through in pairs
-        picture.draw_line(edge[0][0] as isize, edge[0][1] as isize, edge[1][0] as isize, edge[1][1] as isize, &color);
+        picture.draw_line(edge[0][0] as isize, edge[0][1] as isize, edge[0][2], edge[1][0] as isize, edge[1][1] as isize, edge[1][2], &color);
     }
 }
 

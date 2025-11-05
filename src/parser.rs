@@ -17,13 +17,15 @@ pub fn read_script(path: &str) -> Result<(), Box<dyn Error>> {
 
         // while iterator has valid item
         while let Some((line_number, command)) = iterator.next() {
+            let command = command.trim();
+
             // skip empty lines and comments
             if command.is_empty() || command.starts_with('#') {
                 continue;
             }
 
             // match commands
-            match command.as_str() {
+            match command {
                 "display" => {
                     println!("Waiting for display to close...");
                     picture.display()?;
@@ -198,7 +200,7 @@ pub fn read_script(path: &str) -> Result<(), Box<dyn Error>> {
 
                     add_box(&mut polygons, p[0], p[1], p[2], p[3], p[4], p[5]);
                     matrix::multiply(&peek(&coordinate_stack), &mut polygons);
-                    render_polygons(&polygons, &mut picture, &constants::BLUE);
+                    render_polygons(&polygons, &mut picture, &constants::RED);
                     polygons = matrix::new();
                 }
 
@@ -230,7 +232,7 @@ pub fn read_script(path: &str) -> Result<(), Box<dyn Error>> {
 
                     add_torus(&mut polygons, p[0], p[1], p[2], p[3], p[4]);
                     matrix::multiply(&peek(&coordinate_stack), &mut polygons);
-                    render_polygons(&polygons, &mut picture, &constants::BLUE);
+                    render_polygons(&polygons, &mut picture, &constants::GREEN);
                     polygons = matrix::new();
                 }
 

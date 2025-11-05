@@ -2,7 +2,7 @@ type PolygonList = Vec<[f32; 4]>;
 
 use std::f32::consts::PI;
 use crate::picture::Picture;
-use crate::constants::{self, CUBE, STEPS};
+use crate::constants::{CUBE, STEPS};
 use crate::matrix::add_point;
 
 pub fn add_polygon(m: &mut PolygonList, x0: f32, y0: f32, z0: f32, x1: f32, y1: f32, z1: f32, x2: f32, y2: f32, z2: f32) {
@@ -79,31 +79,47 @@ fn scan_line_conversion(picture: &mut Picture, p0: &[f32; 4], p1: &[f32; 4], p2:
         as our horizontal lines move up from b, we need to figure out a delta x on each side to adjust our endpoints
         in this case, the left side has a constant delta x which we will call dx0
         on the right side, BM and MT have different slopes, so we will call them dx1 and dx1_1 respectively
+        we also do the same for the z values
 
         dx0 = (xt - xb) / (yt - yb)
         dx1 = (xm - xb) / (ym - yb)
         dx1_1 = (xt - xm) / (yt - ym)
+
+        dz0 = (zt - zb) / (yt - yb)
+        dz1 = (zm - zb) / (ym - yb)
+        dz1_1 = (zt - zm) / (yt - ym)
     */
 
     let mut x0 = b[0];
     let mut x1 = b[0];
+    let mut z0 = b[2];
+    let mut z1 = b[2];
     let mut y = b[1];
 
     let dx0 = (t[0] - b[0]) / (t[1] - b[1]);
     let mut dx1 = (m[0] - b[0]) / (m[1] - b[1]);
     let dx1_1 = (t[0] - m[0]) / (t[1] - m[1]);
 
+    let dz0 = (t[2] - b[2]) / (t[1] - b[1]);
+    let mut dz1 = (m[2] - b[2]) / (m[1] - b[1]);
+    let dz1_1 = (t[2] - m[2]) / (t[1] - m[1]);
+
     while y <= t[1] {
-        picture.draw_line(x0 as isize, y as isize, x1 as isize, y as isize, color);
+        picture.draw_line(x0 as isize, y as isize, z0, x1 as isize, y as isize, z1, color);
 
         x0 += dx0;
         x1 += dx1;
+        z0 += dz0;
+        z1 += dz1;
         y += 1.0;
 
-        // swap deltas if there's a distinct middle point
+        // swap deltas if there's a distinct middle point and we passed it
         if y > m[1] && dx1 != dx1_1 {
             x1 = m[0];
             dx1 = dx1_1;
+
+            z1 = m[2];
+            dz1 = dz1_1;
         }
     }
 }

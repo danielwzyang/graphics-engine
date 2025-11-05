@@ -11,7 +11,8 @@ pub struct Picture {
     pub yres: usize,
     max_color: usize,
     data: Vec<Vec<(usize, usize, usize)>>,
-    default_color: (usize, usize, usize)
+    default_color: (usize, usize, usize),
+    z_buffer: Vec<Vec<f32>>,
 }
 
 impl Picture {
@@ -20,18 +21,22 @@ impl Picture {
         // using vectors to save space + possibly unknown res at compile time
         let default_color = default_color.clone();
         let data = vec![vec![default_color.clone(); xres]; yres];
+        let z_buffer = vec![vec![f32::NEG_INFINITY; xres]; yres];
         Picture {
             xres,
             yres,
             max_color,
             data,
             default_color,
+            z_buffer,
         }
     }
 
     pub fn clear(&mut self) {
         // fill data with default color
         self.data = vec![vec![self.default_color.clone(); self.xres]; self.yres];
+        // reset z-buffer as well so previous depth values don't interfere
+        self.z_buffer = vec![vec![f32::NEG_INFINITY; self.xres]; self.yres];
     }
 
     pub fn display(&self) -> Result<(), Box<dyn Error>> {
@@ -131,17 +136,25 @@ impl Picture {
         Ok(())
     }
 
-    fn plot(&mut self, x: usize, y: usize, color: &(usize, usize, usize)) {
+    fn plot(&mut self, x: usize, y: usize, z: f32, color: &(usize, usize, usize)) {
         // ignore pixels out of bounds
         if y >= self.yres || x >= self.xres {
             return;
         }
 
+        let y = (self.yres - 1) - y;
+
+        // z buffer
+        if z < self.z_buffer[y][x] {
+            return;
+        }
+
         // flip the y coords so the origin is at the bottom left instead of top left
-        self.data[(self.yres - 1) - y][x] = (color.0, color.1, color.2);
+        self.data[y][x] = (color.0, color.1, color.2);
+        self.z_buffer[y][x] = z;
     }
 
-    pub fn draw_line(&mut self, mut x0: isize, mut y0: isize, x1: isize, y1: isize, color: &(usize, usize, usize)) {
+    pub fn draw_line(&mut self, mut x0: isize, mut y0: isize, mut z0: f32, x1: isize, y1: isize, z1: f32, color: &(usize, usize, usize)) {
         // using absolute value to make it case insensitive for the different octants
         let dx = (x1 - x0).abs();
         let dy = (y1 - y0).abs();
@@ -164,9 +177,14 @@ impl Picture {
         let mut d = if small_slope { a + b / 2 } else { b + a / 2 };
 
         if small_slope {
+            // step in z = delta z / # of pixels plotted
+            // for small slope it's delta x
+            // for big slope its delta y
+            let step_z = (z1 - z0) / (dx as f32);
+
             // there is at least one pixel for every x value for small slope
             while x0 != x1 {
-                self.plot(x0 as usize, y0 as usize, &color);
+                self.plot(x0 as usize, y0 as usize, z0, &color);
 
                 // the y value needs to be stepped when we "fall below" the line
                 // it's not actually falling below the line for all octants,
@@ -180,11 +198,15 @@ impl Picture {
                 // since |m| falls between 0 and 1 we know we always step x
                 x0 += step_x;
                 d += a;
+
+                z0 += step_z;
             }
         } else {
-            // there is at least one pixel for every y value for small slope
+            let step_z = (z1 - z0) / (dy as f32);
+
+            // there is at least one pixel for every y value for big slope
             while y0 != y1 {
-                self.plot(x0 as usize, y0 as usize, &color);
+                self.plot(x0 as usize, y0 as usize, z0, &color);
 
                 // a similar idea here where the x value needs to be stepped if we are "on the left"
                 // a is a positive value, so we only add a if d is negative to get it closer to 0
@@ -196,10 +218,12 @@ impl Picture {
                 // we always step y
                 y0 += step_y;
                 d += b;
+
+                z0 += step_z;
             }
         }
 
         // plot last point
-        self.plot(x0 as usize, y0 as usize, &color);
+        self.plot(x0 as usize, y0 as usize, z0, &color);
     }
 }
