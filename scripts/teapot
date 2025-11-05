@@ -1,0 +1,16 @@
+move
+250 250 0
+scale
+50 50 50
+
+mesh
+meshes/teapot.obj
+
+display
+
+clear
+
+mesh
+meshes/teapot_ascii.stl
+
+display

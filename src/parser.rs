@@ -46,6 +46,67 @@ pub fn read_script(path: &str) -> Result<(), Box<dyn Error>> {
                     picture.save_as_file(filename)?;
                 }
 
+                "mesh" => {
+                    let (line_number, arguments) = iterator.next().unwrap();
+                    let filename = arguments.trim();
+
+                    if let Ok(lines) = read_lines(filename) {
+                        let extension = Path::new(filename).extension()
+                            .and_then(|s| s.to_str()).unwrap_or("").to_ascii_lowercase();
+                    
+                        let mut iterator = lines.map_while(Result::ok);
+
+                        if extension != "obj" && extension != "stl" {
+                            panic!("{}:{} -> extension '.{}' not supported", path, line_number + 1, extension);
+                        }
+
+                        let mut vertices: Vec<[f32; 3]> = vec![];
+                        while let Some(command) = iterator.next() {
+                            let command = command.trim();
+                            let parts: Vec<&str> = command.split_whitespace().collect();
+
+                            // obj defines vertices with v, stl with vertex
+                            if command.starts_with("v ") || command.starts_with("vertex ") {
+                                vertices.push([
+                                    convert_parameter::<f32>(parts[1], path, line_number)?,
+                                    convert_parameter::<f32>(parts[2], path, line_number)?,
+                                    convert_parameter::<f32>(parts[3], path, line_number)?,
+                                ]);
+                            } else if command.starts_with("f ") {
+                                // if obj then the faces are defined with indices (starts with 1 not 0)
+                                let a = convert_parameter::<usize>(parts[1], path, line_number)? - 1;
+                                let b = convert_parameter::<usize>(parts[2], path, line_number)? - 1;
+                                let c = convert_parameter::<usize>(parts[3], path, line_number)? - 1;
+
+                                add_polygon(
+                                    &mut polygons, 
+                                    vertices[a][0], vertices[a][1], vertices[a][2], 
+                                    vertices[b][0], vertices[b][1], vertices[b][2], 
+                                    vertices[c][0], vertices[c][1], vertices[c][2],
+                                );
+                            }
+                        }
+
+                        // if stl then polygons are defined in triplets of points
+                        if extension == "stl" {
+                            for polygon in vertices.chunks(3) {
+                                add_polygon(
+                                    &mut polygons, 
+                                    polygon[0][0], polygon[0][1], polygon[0][2], 
+                                    polygon[1][0], polygon[1][1], polygon[1][2], 
+                                    polygon[2][0], polygon[2][1], polygon[2][2],
+                                );
+                            }
+                        }
+                    } else {
+                        panic!("{}:{} -> mesh file '{}' not found.", path, line_number + 1, filename);
+                    }
+
+                    matrix::multiply(&peek(&coordinate_stack), &mut polygons);
+                    render_polygons(&polygons, &mut picture, &constants::BLUE);
+                    polygons = matrix::new();
+                }
+
                 "pop" => {
                     pop(&mut coordinate_stack);
                 }
