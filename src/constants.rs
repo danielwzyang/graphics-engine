@@ -4,7 +4,7 @@
 pub const DEFAULT_SCRIPT: &str = "scripts/dino";
 
 // use wireframe or scan lines
-pub const ENABLE_SCAN_LINE_CONVERSION: bool = true;
+pub const ENABLE_SCAN_LINE_CONVERSION: bool = false;
 
 // use z_buffer
 pub const ENABLE_Z_BUFFER: bool = false;

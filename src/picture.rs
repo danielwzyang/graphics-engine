@@ -3,6 +3,7 @@ use std::io::Write;
 use std::error::Error;
 use std::path::Path;
 
+use crate::constants::{ENABLE_Z_BUFFER};
 use image::{ImageBuffer, Rgb};
 use show_image::{create_window, ImageInfo, ImageView, WindowOptions};
 
@@ -145,7 +146,7 @@ impl Picture {
         let y = (self.yres - 1) - y;
 
         // z buffer
-        if z < self.z_buffer[y][x] {
+        if z < self.z_buffer[y][x]  && ENABLE_Z_BUFFER {
             return;
         }
 
