@@ -180,11 +180,15 @@ impl Picture {
             // step in z = delta z / # of pixels plotted
             // for small slope it's delta x
             // for big slope its delta y
-            let step_z = (z1 - z0) / (dx as f32);
+            let step_z = (z1 - z0) / (dx as f32 + 1.0);
 
             // there is at least one pixel for every x value for small slope
-            while x0 != x1 {
+            loop {
                 self.plot(x0 as usize, y0 as usize, z0, &color);
+
+                if x0 == x1 {
+                    break;
+                }
 
                 // the y value needs to be stepped when we "fall below" the line
                 // it's not actually falling below the line for all octants,
@@ -202,11 +206,15 @@ impl Picture {
                 z0 += step_z;
             }
         } else {
-            let step_z = (z1 - z0) / (dy as f32);
+            let step_z = (z1 - z0) / (dy as f32 + 1.0);
 
             // there is at least one pixel for every y value for big slope
-            while y0 != y1 {
+            loop {
                 self.plot(x0 as usize, y0 as usize, z0, &color);
+
+                if y0 == y1 {
+                    break;
+                }
 
                 // a similar idea here where the x value needs to be stepped if we are "on the left"
                 // a is a positive value, so we only add a if d is negative to get it closer to 0

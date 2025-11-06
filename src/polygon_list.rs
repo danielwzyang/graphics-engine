@@ -2,7 +2,7 @@ type PolygonList = Vec<[f32; 4]>;
 
 use std::f32::consts::PI;
 use crate::picture::Picture;
-use crate::constants::{CUBE, STEPS};
+use crate::constants::{CUBE, STEPS, ENABLE_SCAN_LINE_CONVERSION};
 use crate::matrix::add_point;
 
 pub fn add_polygon(m: &mut PolygonList, x0: f32, y0: f32, z0: f32, x1: f32, y1: f32, z1: f32, x2: f32, y2: f32, z2: f32) {
@@ -44,7 +44,25 @@ pub fn render_polygons(m: &PolygonList, picture: &mut Picture, color: &(usize, u
         */
 
         if normal[2] > 0.0 {
-            scan_line_conversion(picture, &polygon[0], &polygon[1], &polygon[2], &color);
+            if ENABLE_SCAN_LINE_CONVERSION {
+                scan_line_conversion(picture, &polygon[0], &polygon[1], &polygon[2], &color);
+            } else {
+                picture.draw_line(
+                    polygon[0][0] as isize, polygon[0][1] as isize, polygon[0][2],
+                    polygon[1][0] as isize, polygon[1][1] as isize, polygon[1][2],
+                    &color,
+                );
+                picture.draw_line(
+                    polygon[2][0] as isize, polygon[2][1] as isize, polygon[2][2],
+                    polygon[1][0] as isize, polygon[1][1] as isize, polygon[1][2],
+                    &color,
+                );
+                picture.draw_line(
+                    polygon[0][0] as isize, polygon[0][1] as isize, polygon[0][2],
+                    polygon[2][0] as isize, polygon[2][1] as isize, polygon[2][2],
+                    &color,
+                );
+            }
         }
     }
 }
@@ -52,9 +70,9 @@ pub fn render_polygons(m: &PolygonList, picture: &mut Picture, color: &(usize, u
 fn scan_line_conversion(picture: &mut Picture, p0: &[f32; 4], p1: &[f32; 4], p2: &[f32; 4], color: &(usize, usize, usize)) {
     // sort three points by their y values so we have a bottom top and middle
     // rounding because float to isize conversion leaves missed pixels
-    let mut b = [p0[0].round(), p0[1].round(), p0[2]];
-    let mut m = [p1[0].round(), p1[1].round(), p1[2]];
-    let mut t = [p2[0].round(), p2[1].round(), p2[2]];
+    let mut b = [p0[0], p0[1], p0[2]];
+    let mut m = [p1[0], p1[1], p1[2]];
+    let mut t = [p2[0], p2[1], p2[2]];
 
     if b[1] > m[1] {
         std::mem::swap(&mut b, &mut m);
@@ -96,13 +114,16 @@ fn scan_line_conversion(picture: &mut Picture, p0: &[f32; 4], p1: &[f32; 4], p2:
     let mut z1 = b[2];
     let mut y = b[1];
 
-    let dx0 = (t[0] - b[0]) / (t[1] - b[1]);
-    let mut dx1 = (m[0] - b[0]) / (m[1] - b[1]);
-    let dx1_1 = (t[0] - m[0]) / (t[1] - m[1]);
+    let dx0 = (t[0] - b[0]) / (t[1] - b[1] + 1.0);
+    let mut dx1 = (m[0] - b[0]) / (m[1] - b[1] + 1.0);
+    let dx1_1 = (t[0] - m[0]) / (t[1] - m[1] + 1.0);
 
-    let dz0 = (t[2] - b[2]) / (t[1] - b[1]);
-    let mut dz1 = (m[2] - b[2]) / (m[1] - b[1]);
-    let dz1_1 = (t[2] - m[2]) / (t[1] - m[1]);
+    let dz0 = (t[2] - b[2]) / (t[1] - b[1] + 1.0);
+    let mut dz1 = (m[2] - b[2]) / (m[1] - b[1] + 1.0);
+    let dz1_1 = (t[2] - m[2]) / (t[1] - m[1] + 1.0);
+
+    // if there's no distinct middle point
+    let is_special = b[1] == m[1] || b[1] == t[1] || m[1] == t[1];
 
     while y <= t[1] {
         picture.draw_line(x0 as isize, y as isize, z0, x1 as isize, y as isize, z1, color);
@@ -113,11 +134,10 @@ fn scan_line_conversion(picture: &mut Picture, p0: &[f32; 4], p1: &[f32; 4], p2:
         z1 += dz1;
         y += 1.0;
 
-        // swap deltas if there's a distinct middle point and we passed it
-        if y > m[1] && dx1 != dx1_1 {
+        // swap deltas if we passed the middle point
+        if y > m[1] && !is_special {
             x1 = m[0];
             dx1 = dx1_1;
-
             z1 = m[2];
             dz1 = dz1_1;
         }

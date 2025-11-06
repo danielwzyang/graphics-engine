@@ -3,6 +3,12 @@
 // default script if one isn't provided
 pub const DEFAULT_SCRIPT: &str = "scripts/dino";
 
+// use wireframe or scan lines
+pub const ENABLE_SCAN_LINE_CONVERSION: bool = true;
+
+// use z_buffer
+pub const ENABLE_Z_BUFFER: bool = false;
+
 // colors
 pub const WHITE: (usize, usize, usize) = (255, 255, 255);
 pub const BLACK: (usize, usize, usize) = (0, 0, 0);
