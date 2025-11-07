@@ -1,5 +1,5 @@
-use crate::{matrix, constants, coordinate_stack};
-use crate::coordinate_stack::{peek, pop, push, apply_transformation};
+use crate::{matrix, constants};
+use crate::coordinate_stack::CoordinateStack;
 use crate::picture::Picture;
 use crate::edge_list::{render_edges, add_bezier_curve, add_circle, add_edge, add_hermite_curve};
 use crate::polygon_list::{add_box, add_polygon, add_sphere, add_torus, render_polygons};
@@ -11,7 +11,7 @@ struct ScriptContext {
     picture: Picture,
     edges: Matrix,
     polygons: Matrix,
-    coordinate_stack: Vec<Matrix>,
+    coordinate_stack: CoordinateStack,
 }
 
 impl ScriptContext {
@@ -22,18 +22,18 @@ impl ScriptContext {
             picture: Picture::new(xres, yres, 255, &constants::DEFAULT_BACKGROUND_COLOR),
             edges: matrix::new(),
             polygons: matrix::new(),
-            coordinate_stack: coordinate_stack::new(),
+            coordinate_stack: CoordinateStack::new(),
         }
     }
 
     fn render_edges(&mut self, color: &(usize, usize, usize)) {
-        matrix::multiply(&peek(&self.coordinate_stack), &mut self.edges);
+        matrix::multiply(&self.coordinate_stack.peek(), &mut self.edges);
         render_edges(&self.edges, &mut self.picture, color);
         self.edges = matrix::new();
     }
 
     fn render_polygons(&mut self, color: &(usize, usize, usize)) {
-        matrix::multiply(&peek(&self.coordinate_stack), &mut self.polygons);
+        matrix::multiply(&self.coordinate_stack.peek(), &mut self.polygons);
         render_polygons(&self.polygons, &mut self.picture, color);
         self.polygons = matrix::new();
     }
@@ -89,26 +89,20 @@ fn process_command(
 
         "mesh" => handle_mesh(context, iterator, path, line_number)?,
 
-        "pop" => pop(&mut context.coordinate_stack),
+        "pop" => context.coordinate_stack.pop(),
 
-        "push" => push(&mut context.coordinate_stack),
+        "push" => context.coordinate_stack.push(),
 
         "scale" => {
             let params = get_next_params::<f32>(iterator, path, "scale", 3)?;
 
-            apply_transformation(
-                &mut context.coordinate_stack,
-                matrix::dilation(params[0], params[1], params[2]),
-            );
+            context.coordinate_stack.apply_transformation(matrix::dilation(params[0], params[1], params[2]));
         }
 
         "move" => {
             let params = get_next_params::<f32>(iterator, path, "move", 3)?;
 
-            apply_transformation(
-                &mut context.coordinate_stack,
-                matrix::translation(params[0], params[1], params[2]),
-            );
+            context.coordinate_stack.apply_transformation(matrix::translation(params[0], params[1], params[2]));
         }
 
         "rotate" => {
@@ -126,10 +120,7 @@ fn process_command(
                 p => return Err(format!("{}:{} -> invalid axis '{}'", path, ln + 1, p).into()),
             };
 
-            apply_transformation(
-                &mut context.coordinate_stack,
-                matrix::rotation(axis, convert_parameter::<f32>(parts[1], path, ln + 1)?),
-            );
+            context.coordinate_stack.apply_transformation(matrix::rotation(axis, convert_parameter::<f32>(parts[1], path, ln + 1)?));
         }
 
         "line" => {
@@ -193,7 +184,7 @@ fn handle_mesh(
     line_number: usize,
 ) -> Result<(), Box<dyn Error>> {
     let filename = get_next_param(iterator, path, "mesh", "<filepath>")?;
-    
+
     let lines = read_lines(&filename)
         .map_err(|_| format!("{}:{} -> mesh file '{}' not found", path, line_number + 1, filename))?;
 

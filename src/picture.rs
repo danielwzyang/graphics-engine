@@ -23,7 +23,7 @@ impl Picture {
         let default_color = default_color.clone();
         let data = vec![vec![default_color.clone(); xres]; yres];
         let z_buffer = vec![vec![f32::NEG_INFINITY; xres]; yres];
-        Picture {
+        Self {
             xres,
             yres,
             max_color,
