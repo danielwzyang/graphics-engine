@@ -17,9 +17,9 @@ struct ScriptContext {
 impl ScriptContext {
     fn new() -> Self {
         let (xres, yres) = constants::DEFAULT_PICTURE_DIMENSIONS;
-        
+
         Self {
-            picture: Picture::new(xres, yres, 255, &constants::WHITE),
+            picture: Picture::new(xres, yres, 255, &constants::DEFAULT_BACKGROUND_COLOR),
             edges: matrix::new(),
             polygons: matrix::new(),
             coordinate_stack: coordinate_stack::new(),
