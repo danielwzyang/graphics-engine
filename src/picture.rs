@@ -3,7 +3,7 @@ use std::io::Write;
 use std::error::Error;
 use std::path::Path;
 
-use crate::constants::{ENABLE_Z_BUFFER};
+use crate::constants::ENABLE_Z_BUFFER;
 use image::{ImageBuffer, Rgb};
 use show_image::{create_window, ImageInfo, ImageView, WindowOptions};
 
@@ -18,7 +18,7 @@ pub struct Picture {
 
 impl Picture {
     // constructor
-    pub fn new(xres: usize, yres: usize, max_color: usize, default_color: &(usize, usize, usize)) -> Picture {
+    pub fn new(xres: usize, yres: usize, max_color: usize, default_color: &(usize, usize, usize)) -> Self {
         // using vectors to save space + possibly unknown res at compile time
         let default_color = default_color.clone();
         let data = vec![vec![default_color.clone(); xres]; yres];

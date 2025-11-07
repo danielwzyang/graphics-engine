@@ -2,7 +2,8 @@
 
 /* CONFIG */
 pub const DEFAULT_SCRIPT: &str = "scripts/dino";
-pub const STEPS: i32 = 20; // steps for parametric equations
+pub const DEFAULT_PICTURE_DIMENSIONS: (usize, usize) = (500, 500);
+pub const STEPS: i32 = 20; // parametric
 pub const ENABLE_BACK_FACE_CULLING: bool = true;
 pub const ENABLE_SCAN_LINE_CONVERSION: bool = true;
 pub const ENABLE_Z_BUFFER: bool = true;

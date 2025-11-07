@@ -5,325 +5,303 @@ use crate::edge_list::{render_edges, add_bezier_curve, add_circle, add_edge, add
 use crate::polygon_list::{add_box, add_polygon, add_sphere, add_torus, render_polygons};
 use std::{error::Error, io, io::BufRead, fs::File, path::Path};
 
-pub fn read_script(path: &str) -> Result<(), Box<dyn Error>> {
-    let mut picture = Picture::new(500, 500, 255, &constants::WHITE);
-    let mut edges = matrix::new();
-    let mut polygons = matrix::new();
-    let mut coordinate_stack = coordinate_stack::new();
+type Matrix = Vec<[f32; 4]>;
 
-    if let Ok(lines) = read_lines(path) {
-        // create an iterator to read through lines
-        let mut iterator = lines.map_while(Result::ok).enumerate();
+struct ScriptContext {
+    picture: Picture,
+    edges: Matrix,
+    polygons: Matrix,
+    coordinate_stack: Vec<Matrix>,
+}
 
-        // while iterator has valid item
-        while let Some((line_number, command)) = iterator.next() {
-            let command = command.trim();
-
-            // skip empty lines and comments
-            if command.is_empty() || command.starts_with('#') {
-                continue;
-            }
-
-            // match commands
-            match command {
-                "display" => {
-                    println!("Waiting for display to close...");
-                    picture.display()?;
-                }
-
-                "clear" => {
-                    picture.clear();
-                }
-
-                "save" => {
-                    let (line_number, arguments) = iterator.next().unwrap();
-                    let filename = arguments.trim();
-
-                    if filename.is_empty() {
-                        panic!("{}:{} -> 'save' command expected <filepath>", path, line_number + 1);
-                    }
-
-                    picture.save_as_file(filename)?;
-                }
-
-                "mesh" => {
-                    let (line_number, arguments) = iterator.next().unwrap();
-                    let filename = arguments.trim();
-
-                    if let Ok(lines) = read_lines(filename) {
-                        let extension = Path::new(filename).extension()
-                            .and_then(|s| s.to_str()).unwrap_or("").to_ascii_lowercase();
-                    
-                        let mut iterator = lines.map_while(Result::ok);
-
-                        if extension != "obj" && extension != "stl" {
-                            panic!("{}:{} -> extension '.{}' not supported", path, line_number + 1, extension);
-                        }
-
-                        let mut vertices: Vec<[f32; 3]> = vec![];
-                        while let Some(command) = iterator.next() {
-                            let command = command.trim();
-                            let parts: Vec<&str> = command.split_whitespace().collect();
-
-                            // obj defines vertices with v, stl with vertex
-                            if command.starts_with("v ") || command.starts_with("vertex ") {
-                                vertices.push([
-                                    convert_parameter::<f32>(parts[1], path, line_number)?,
-                                    convert_parameter::<f32>(parts[2], path, line_number)?,
-                                    convert_parameter::<f32>(parts[3], path, line_number)?,
-                                ]);
-                            } else if command.starts_with("f ") {
-                                // if obj then the faces are defined with indices (starts with 1 not 0)
-                                let a = convert_parameter::<usize>(parts[1], path, line_number)? - 1;
-                                let b = convert_parameter::<usize>(parts[2], path, line_number)? - 1;
-                                let c = convert_parameter::<usize>(parts[3], path, line_number)? - 1;
-
-                                add_polygon(
-                                    &mut polygons, 
-                                    vertices[a][0], vertices[a][1], vertices[a][2], 
-                                    vertices[b][0], vertices[b][1], vertices[b][2], 
-                                    vertices[c][0], vertices[c][1], vertices[c][2],
-                                );
-                            }
-                        }
-
-                        // if stl then polygons are defined in triplets of points
-                        if extension == "stl" {
-                            for polygon in vertices.chunks(3) {
-                                add_polygon(
-                                    &mut polygons, 
-                                    polygon[0][0], polygon[0][1], polygon[0][2], 
-                                    polygon[1][0], polygon[1][1], polygon[1][2], 
-                                    polygon[2][0], polygon[2][1], polygon[2][2],
-                                );
-                            }
-                        }
-                    } else {
-                        panic!("{}:{} -> mesh file '{}' not found.", path, line_number + 1, filename);
-                    }
-
-                    matrix::multiply(&peek(&coordinate_stack), &mut polygons);
-                    render_polygons(&polygons, &mut picture, &constants::BLUE);
-                    polygons = matrix::new();
-                }
-
-                "pop" => {
-                    pop(&mut coordinate_stack);
-                }
-
-                "push" => {
-                    push(&mut coordinate_stack);
-                }
-
-                "scale" => {
-                    let (line_number, arguments) = iterator.next().unwrap();
-                    let parts: Vec<&str> = arguments.split_whitespace().collect();
-
-                    if parts.len() < 3 {
-                        panic!("{}:{} -> 'scale' command expected <x> <y> <z>", path, line_number + 1);
-                    }
-
-                    let p = convert_parameters::<f32>(parts, path, line_number + 1)?;
-
-                    apply_transformation(
-                        &mut coordinate_stack,
-                        matrix::dilation(p[0], p[1], p[2]),
-                    );
-                }
-
-                "move" => {
-                    let (line_number, arguments) = iterator.next().unwrap();
-                    let parts: Vec<&str> = arguments.split_whitespace().collect();
-
-                    if parts.len() < 3 {
-                        panic!("{}:{} -> 'move' command expected <x> <y> <z>", path, line_number + 1);
-                    }
-
-                    let p = convert_parameters::<f32>(parts, path, line_number + 1)?;
-
-                    apply_transformation(
-                        &mut coordinate_stack,
-                        matrix::translation(p[0], p[1], p[2]),
-                    );
-                }
-
-                "rotate" => {
-                    let (line_number, arguments) = iterator.next().unwrap();
-                    let parts: Vec<&str> = arguments.split_whitespace().collect();
-
-                    if parts.len() < 2 {
-                        panic!("{}:{} -> 'rotate' command expected <x | y | z> <degrees>", path, line_number + 1);
-                    }
-
-                    apply_transformation(
-                        &mut coordinate_stack,
-                        matrix::rotation(
-                            match parts[0] {
-                                "x" => matrix::Rotation::X,
-                                "y" => matrix::Rotation::Y,
-                                "z" => matrix::Rotation::Z,
-                                parameter => panic!("{}:{} -> invalid parameter: '{}'. expected <x | y | z>", path, line_number + 1, parameter)
-                            },
-                            convert_parameter::<f32>(parts[1], path, line_number + 1)?,
-                        ),
-                    )
-                }
-
-                "line" => {
-                    let (line_number, arguments) = iterator.next().unwrap();
-                    let parts: Vec<&str> = arguments.split_whitespace().collect();
-
-                    if parts.len() < 6 {
-                        panic!("{}:{} -> 'line' command expected <x0> <y0> <x1> <y1>", path, line_number + 1);
-                    }
-
-                    let p = convert_parameters::<f32>(parts, path, line_number + 1)?;
-
-                    add_edge(&mut edges, p[0], p[1], p[2], p[3], p[4], p[5]);
-                    matrix::multiply(&peek(&coordinate_stack), &mut edges);
-                    render_edges(&edges, &mut picture, &constants::BLUE);
-                    edges = matrix::new();
-                }
-
-                "circle" => {
-                    let (line_number, arguments) = iterator.next().unwrap();
-                    let parts: Vec<&str> = arguments.split_whitespace().collect();
-
-                    if parts.len() < 4 {
-                        panic!("{}:{} -> 'circle' command expected <cx> <cy> <cz> <r>", path, line_number + 1);
-                    }
-
-                    let p = convert_parameters::<f32>(parts, path, line_number + 1)?;
-
-                    add_circle(&mut edges, p[0], p[1], p[2], p[3]);
-                    matrix::multiply(&peek(&coordinate_stack), &mut edges);
-                    render_edges(&edges, &mut picture, &constants::BLUE);
-                    edges = matrix::new();
-                }
-
-                "hermite" => {
-                    let (line_number, arguments) = iterator.next().unwrap();
-                    let parts: Vec<&str> = arguments.split_whitespace().collect();
-
-                    if parts.len() < 8 {
-                        panic!("{}:{} -> 'hermite' command expected <x0> <y0> <x1> <y1> <rx0> <ry0> <rx1> <ry1>", path, line_number + 1);
-                    }
-
-                    let p = convert_parameters::<f32>(parts, path, line_number + 1)?;
-
-                    add_hermite_curve(&mut edges, p[0], p[1], p[2], p[3], p[4], p[5], p[6], p[7]);
-                    matrix::multiply(&peek(&coordinate_stack), &mut edges);
-                    render_edges(&edges, &mut picture, &constants::BLUE);
-                    edges = matrix::new();
-                }
-
-                "bezier" => {
-                    let (line_number, arguments) = iterator.next().unwrap();
-                    let parts: Vec<&str> = arguments.split_whitespace().collect();
-
-                    if parts.len() < 8 {
-                        panic!("{}:{} -> 'bezier' command expected <x0> <y0> <x1> <y1> <x2> <y2> <x3> <y3>", path, line_number + 1);
-                    }
-
-                    let p = convert_parameters::<f32>(parts, path, line_number + 1)?;
-
-                    add_bezier_curve(&mut edges, p[0], p[1], p[2], p[3], p[4], p[5], p[6], p[7]);
-                    matrix::multiply(&peek(&coordinate_stack), &mut edges);
-                    render_edges(&edges, &mut picture, &constants::BLUE);
-                    edges = matrix::new();
-                }
-
-                "polygon" => {
-                    let (line_number, arguments) = iterator.next().unwrap();
-                    let parts: Vec<&str> = arguments.split_whitespace().collect();
-
-                    if parts.len() < 9 {
-                        panic!("{}:{} -> 'polygon' command expected <x0> <y0> <z0> <x1> <y1> <z1> <x2> <y2> <z2>", path, line_number + 1);
-                    }
-
-                    let p = convert_parameters::<f32>(parts, path, line_number + 1)?;
-
-                    add_polygon(&mut polygons, p[0], p[1], p[2], p[3], p[4], p[5], p[6], p[7], p[8]);
-                    matrix::multiply(&peek(&coordinate_stack), &mut polygons);
-                    render_polygons(&polygons, &mut picture, &constants::BLUE);
-                    polygons = matrix::new();
-                }
-
-                "box" => {
-                    let (line_number, arguments) = iterator.next().unwrap();
-                    let parts: Vec<&str> = arguments.split_whitespace().collect();
-
-                    if parts.len() < 6 {
-                        panic!("{}:{} -> 'box' command expected <x> <y> <z> <w> <h> <d>", path, line_number + 1);
-                    }
-
-                    let p = convert_parameters::<f32>(parts, path, line_number + 1)?;
-
-                    add_box(&mut polygons, p[0], p[1], p[2], p[3], p[4], p[5]);
-                    matrix::multiply(&peek(&coordinate_stack), &mut polygons);
-                    render_polygons(&polygons, &mut picture, &constants::RED);
-                    polygons = matrix::new();
-                }
-
-                "sphere" => {
-                    let (line_number, arguments) = iterator.next().unwrap();
-                    let parts: Vec<&str> = arguments.split_whitespace().collect();
-
-                    if parts.len() < 4 {
-                        panic!("{}:{} -> 'sphere' command expected <cx> <cy> <cz> <r>", path, line_number + 1);
-                    }
-
-                    let p = convert_parameters::<f32>(parts, path, line_number + 1)?;
-
-                    add_sphere(&mut polygons, p[0], p[1], p[2], p[3]);
-                    matrix::multiply(&peek(&coordinate_stack), &mut polygons);
-                    render_polygons(&polygons, &mut picture, &constants::BLUE);
-                    polygons = matrix::new();
-                }
-
-                "torus" => {
-                    let (line_number, arguments) = iterator.next().unwrap();
-                    let parts: Vec<&str> = arguments.split_whitespace().collect();
-
-                    if parts.len() < 4 {
-                        panic!("{}:{} -> 'torus' command expected <cx> <cy> <cz> <r1> <r2>", path, line_number + 1);
-                    }
-
-                    let p = convert_parameters::<f32>(parts, path, line_number + 1)?;
-
-                    add_torus(&mut polygons, p[0], p[1], p[2], p[3], p[4]);
-                    matrix::multiply(&peek(&coordinate_stack), &mut polygons);
-                    render_polygons(&polygons, &mut picture, &constants::GREEN);
-                    polygons = matrix::new();
-                }
-
-                unknown => {
-                    println!("{}:{} -> unknown command '{}'.", path, line_number, unknown);
-                }
-            }
+impl ScriptContext {
+    fn new() -> Self {
+        let (xres, yres) = constants::DEFAULT_PICTURE_DIMENSIONS;
+        
+        Self {
+            picture: Picture::new(xres, yres, 255, &constants::WHITE),
+            edges: matrix::new(),
+            polygons: matrix::new(),
+            coordinate_stack: coordinate_stack::new(),
         }
+    }
+
+    fn render_edges(&mut self, color: &(usize, usize, usize)) {
+        matrix::multiply(&peek(&self.coordinate_stack), &mut self.edges);
+        render_edges(&self.edges, &mut self.picture, color);
+        self.edges = matrix::new();
+    }
+
+    fn render_polygons(&mut self, color: &(usize, usize, usize)) {
+        matrix::multiply(&peek(&self.coordinate_stack), &mut self.polygons);
+        render_polygons(&self.polygons, &mut self.picture, color);
+        self.polygons = matrix::new();
+    }
+}
+
+pub fn read_script(path: &str) -> Result<(), Box<dyn Error>> {
+    let mut context = ScriptContext::new();
+
+    let lines = read_lines(path).map_err(|_| format!("'{}' not found", path))?;
+
+    let mut iterator = lines.map_while(Result::ok).enumerate();
+
+    while let Some((line_number, command)) = iterator.next() {
+        // trim white space
+        let command = command.trim();
+
+        // ignore blank commands or comments
+        if command.is_empty() || command.starts_with('#') {
+            continue;
+        }
+
+        process_command(&mut context, &mut iterator, command, path, line_number)?;
     }
 
     Ok(())
 }
 
 fn read_lines<P>(filename: P) -> io::Result<io::Lines<io::BufReader<File>>>
-where P: AsRef<Path>, {
+where P: AsRef<Path> {
     let file = File::open(filename)?;
     Ok(io::BufReader::new(file).lines())
 }
 
-fn convert_parameters<T: std::str::FromStr>(parameters: Vec<&str>, path: &str, line_number: usize) -> Result<Vec<T>, Box<dyn Error>> {
-    let mut res = vec![];
-    for parameter in parameters {
-        res.push(convert_parameter::<T>(parameter, path, line_number)?);
+fn process_command(
+    context: &mut ScriptContext,
+    iterator: &mut impl Iterator<Item = (usize, String)>,
+    command: &str,
+    path: &str,
+    line_number: usize,
+) -> Result<(), Box<dyn Error>> {
+    match command {
+        "display" => {
+            println!("Waiting for display to close...");
+            context.picture.display()?;
+        }
+
+        "clear" => context.picture.clear(),
+
+        "save" => {
+            let filename = get_next_param(iterator, path, "save", "<filepath>")?;
+            context.picture.save_as_file(&filename)?;
+        }
+
+        "mesh" => handle_mesh(context, iterator, path, line_number)?,
+
+        "pop" => pop(&mut context.coordinate_stack),
+
+        "push" => push(&mut context.coordinate_stack),
+
+        "scale" => {
+            let params = get_next_params::<f32>(iterator, path, "scale", 3)?;
+
+            apply_transformation(
+                &mut context.coordinate_stack,
+                matrix::dilation(params[0], params[1], params[2]),
+            );
+        }
+
+        "move" => {
+            let params = get_next_params::<f32>(iterator, path, "move", 3)?;
+
+            apply_transformation(
+                &mut context.coordinate_stack,
+                matrix::translation(params[0], params[1], params[2]),
+            );
+        }
+
+        "rotate" => {
+            let (ln, args) = iterator.next().unwrap();
+            let parts: Vec<&str> = args.split_whitespace().collect();
+
+            if parts.len() < 2 {
+                return Err(format!("{}:{} -> 'rotate' expected <x|y|z> <degrees>", path, ln + 1).into());
+            }
+
+            let axis = match parts[0] {
+                "x" => matrix::Rotation::X,
+                "y" => matrix::Rotation::Y,
+                "z" => matrix::Rotation::Z,
+                p => return Err(format!("{}:{} -> invalid axis '{}'", path, ln + 1, p).into()),
+            };
+
+            apply_transformation(
+                &mut context.coordinate_stack,
+                matrix::rotation(axis, convert_parameter::<f32>(parts[1], path, ln + 1)?),
+            );
+        }
+
+        "line" => {
+            let p = get_next_params::<f32>(iterator, path, "line", 6)?;
+            add_edge(&mut context.edges, p[0], p[1], p[2], p[3], p[4], p[5]);
+            context.render_edges(&constants::BLUE);
+        }
+
+        "circle" => {
+            let p = get_next_params::<f32>(iterator, path, "circle", 4)?;
+            add_circle(&mut context.edges, p[0], p[1], p[2], p[3]);
+            context.render_edges(&constants::BLUE);
+        }
+
+        "hermite" => {
+            let p = get_next_params::<f32>(iterator, path, "hermite", 8)?;
+            add_hermite_curve(&mut context.edges, p[0], p[1], p[2], p[3], p[4], p[5], p[6], p[7]);
+            context.render_edges(&constants::BLUE);
+        }
+
+        "bezier" => {
+            let p = get_next_params::<f32>(iterator, path, "bezier", 8)?;
+            add_bezier_curve(&mut context.edges, p[0], p[1], p[2], p[3], p[4], p[5], p[6], p[7]);
+            context.render_edges(&constants::BLUE);
+        }
+
+        "polygon" => {
+            let p = get_next_params::<f32>(iterator, path, "polygon", 9)?;
+            add_polygon(&mut context.polygons, p[0], p[1], p[2], p[3], p[4], p[5], p[6], p[7], p[8]);
+            context.render_polygons(&constants::BLUE);
+        }
+
+        "box" => {
+            let p = get_next_params::<f32>(iterator, path, "box", 6)?;
+            add_box(&mut context.polygons, p[0], p[1], p[2], p[3], p[4], p[5]);
+            context.render_polygons(&constants::RED);
+        }
+
+        "sphere" => {
+            let p = get_next_params::<f32>(iterator, path, "sphere", 4)?;
+            add_sphere(&mut context.polygons, p[0], p[1], p[2], p[3]);
+            context.render_polygons(&constants::BLUE);
+        }
+
+        "torus" => {
+            let p = get_next_params::<f32>(iterator, path, "torus", 5)?;
+            add_torus(&mut context.polygons, p[0], p[1], p[2], p[3], p[4]);
+            context.render_polygons(&constants::GREEN);
+        }
+
+        unknown => println!("{}:{} -> unknown command '{}'.", path, line_number, unknown),
     }
-    Ok(res)
+
+    Ok(())
 }
 
-fn convert_parameter<T: std::str::FromStr>(parameter: &str, path: &str, line_number: usize) -> Result<T, Box<dyn Error>> {
-    match parameter.parse::<T>() {
-        Ok(value) => Ok(value),
-        _ => Err(format!("{}:{} -> invalid parameter: '{}'. expected {}.", path, line_number, parameter, std::any::type_name::<T>()).into()),
+fn handle_mesh(
+    context: &mut ScriptContext,
+    iterator: &mut impl Iterator<Item = (usize, String)>,
+    path: &str,
+    line_number: usize,
+) -> Result<(), Box<dyn Error>> {
+    let filename = get_next_param(iterator, path, "mesh", "<filepath>")?;
+    
+    let lines = read_lines(&filename)
+        .map_err(|_| format!("{}:{} -> mesh file '{}' not found", path, line_number + 1, filename))?;
+
+    let extension = Path::new(&filename)
+        .extension()
+        .and_then(|s| s.to_str())
+        .unwrap_or("")
+        .to_ascii_lowercase();
+
+    if extension != "obj" && extension != "stl" {
+        return Err(format!("{}:{} -> extension '.{}' not supported", path, line_number + 1, extension).into());
     }
+
+    let mut vertices: Vec<[f32; 3]> = vec![];
+    for line in lines.map_while(Result::ok) {
+        let line = line.trim();
+        let parts: Vec<&str> = line.split_whitespace().collect();
+
+        if line.starts_with("v ") || line.starts_with("vertex ") {
+            vertices.push([
+                convert_parameter::<f32>(parts[1], path, line_number)?,
+                convert_parameter::<f32>(parts[2], path, line_number)?,
+                convert_parameter::<f32>(parts[3], path, line_number)?,
+            ]);
+        } else if line.starts_with("f ") {
+            let a = convert_parameter::<usize>(parts[1], path, line_number)? - 1;
+            let b = convert_parameter::<usize>(parts[2], path, line_number)? - 1;
+            let c = convert_parameter::<usize>(parts[3], path, line_number)? - 1;
+
+            add_polygon(
+                &mut context.polygons,
+                vertices[a][0], vertices[a][1], vertices[a][2],
+                vertices[b][0], vertices[b][1], vertices[b][2],
+                vertices[c][0], vertices[c][1], vertices[c][2],
+            );
+        }
+    }
+
+    if extension == "stl" {
+        for polygon in vertices.chunks(3) {
+            add_polygon(
+                &mut context.polygons,
+                polygon[0][0], polygon[0][1], polygon[0][2],
+                polygon[1][0], polygon[1][1], polygon[1][2],
+                polygon[2][0], polygon[2][1], polygon[2][2],
+            );
+        }
+    }
+
+    context.render_polygons(&constants::BLUE);
+    Ok(())
+}
+
+fn get_next_param(
+    iterator: &mut impl Iterator<Item = (usize, String)>,
+    path: &str,
+    cmd: &str,
+    expected: &str,
+) -> Result<String, Box<dyn Error>> {
+    let (ln, args) = iterator.next().unwrap();
+    let arg = args.trim();
+    if arg.is_empty() {
+        return Err(format!("{}:{} -> '{}' expected {}", path, ln + 1, cmd, expected).into());
+    }
+    Ok(arg.to_string())
+}
+
+fn get_next_params<T: std::str::FromStr>(
+    iterator: &mut impl Iterator<Item = (usize, String)>,
+    path: &str,
+    cmd: &str,
+    count: usize,
+) -> Result<Vec<T>, Box<dyn Error>> {
+    let (ln, args) = iterator.next().unwrap();
+
+    let parts: Vec<&str> = args.split_whitespace().collect();
+
+    if parts.len() < count {
+        return Err(format!("{}:{} -> '{}' expected {} parameters", path, ln + 1, cmd, count).into());
+    }
+
+    convert_parameters(parts, path, ln + 1)
+}
+
+fn convert_parameters<T: std::str::FromStr>(
+    parameters: Vec<&str>,
+    path: &str,
+    line_number: usize,
+) -> Result<Vec<T>, Box<dyn Error>> {
+    parameters
+        .iter()
+        .map(|p| convert_parameter::<T>(p, path, line_number))
+        .collect()
+}
+
+fn convert_parameter<T: std::str::FromStr>(
+    parameter: &str,
+    path: &str,
+    line_number: usize,
+) -> Result<T, Box<dyn Error>> {
+    parameter.parse::<T>().map_err(|_| {
+        format!(
+            "{}:{} -> invalid parameter: '{}'. expected {}.",
+            path,
+            line_number,
+            parameter,
+            std::any::type_name::<T>()
+        )
+        .into()
+    })
 }
