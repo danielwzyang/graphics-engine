@@ -2,7 +2,7 @@ type PolygonList = Vec<[f32; 4]>;
 
 use std::f32::consts::PI;
 use crate::picture::Picture;
-use crate::constants::{CUBE, STEPS, ENABLE_SCAN_LINE_CONVERSION};
+use crate::constants::{CUBE, ENABLE_BACK_FACE_CULLING, ENABLE_SCAN_LINE_CONVERSION, STEPS};
 use crate::matrix::add_point;
 
 pub fn add_polygon(m: &mut PolygonList, x0: f32, y0: f32, z0: f32, x1: f32, y1: f32, z1: f32, x2: f32, y2: f32, z2: f32) {
@@ -43,7 +43,7 @@ pub fn render_polygons(m: &PolygonList, picture: &mut Picture, color: &(usize, u
             the dot product of n and v is just the z component of n
         */
 
-        if normal[2] > 0.0 {
+        if normal[2] > 0.0 && ENABLE_BACK_FACE_CULLING {
             if ENABLE_SCAN_LINE_CONVERSION {
                 scan_line_conversion(picture, &polygon[0], &polygon[1], &polygon[2], &color);
             } else {
