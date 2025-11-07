@@ -69,7 +69,6 @@ pub fn render_polygons(m: &PolygonList, picture: &mut Picture, color: &(usize, u
 
 fn scan_line_conversion(picture: &mut Picture, p0: &[f32; 4], p1: &[f32; 4], p2: &[f32; 4], color: &(usize, usize, usize)) {
     // sort three points by their y values so we have a bottom top and middle
-    // rounding because float to isize conversion leaves missed pixels
     let mut b = [p0[0], p0[1], p0[2]];
     let mut m = [p1[0], p1[1], p1[2]];
     let mut t = [p2[0], p2[1], p2[2]];
@@ -106,41 +105,63 @@ fn scan_line_conversion(picture: &mut Picture, p0: &[f32; 4], p1: &[f32; 4], p2:
         dz0 = (zt - zb) / (yt - yb)
         dz1 = (zm - zb) / (ym - yb)
         dz1_1 = (zt - zm) / (yt - ym)
+
+        we do have to be careful with triangles that have flat tops and flat bottoms though
+        honestly i'm not entirely sure what i did that fixed it, but i think it has to do with my flip boolean
+        before that my flat bottom triangles would have a weird NaN slope on the right side
+
+        also something REALLY annoying is cumulative floating point error which ends up with a lot of weird artifacts and gaps
+
+        to fix this i kind of spam integer conversion
     */
 
+    let y_start = b[1] as isize;
+    let y_mid = m[1] as isize;
+    let y_end = t[1] as isize;
+
+    let distance0 = (y_end - y_start) as f32 + 1.0;
+    let distance1 = (y_mid - y_start) as f32 + 1.0;
+    let distance2 = (y_end - y_mid) as f32 + 1.0;
+
+    let dx0 = if distance0 != 0.0 { (t[0] - b[0]) / distance0 } else { 0.0 };
+    let dz0 = if distance0 != 0.0 { (t[2] - b[2]) / distance0 } else { 0.0 };
+    let mut dx1 = if distance1 != 0.0 { (m[0] - b[0]) / distance1 } else { 0.0 };
+    let mut dz1 = if distance1 != 0.0 { (m[2] - b[2]) / distance1 } else { 0.0 };
+
     let mut x0 = b[0];
-    let mut x1 = b[0];
     let mut z0 = b[2];
+    let mut x1 = b[0];
     let mut z1 = b[2];
-    let mut y = b[1];
 
-    let dx0 = (t[0] - b[0]) / (t[1] - b[1] + 1.0);
-    let mut dx1 = (m[0] - b[0]) / (m[1] - b[1] + 1.0);
-    let dx1_1 = (t[0] - m[0]) / (t[1] - m[1] + 1.0);
+    let mut flip = false;
+    let mut y = y_start;
 
-    let dz0 = (t[2] - b[2]) / (t[1] - b[1] + 1.0);
-    let mut dz1 = (m[2] - b[2]) / (m[1] - b[1] + 1.0);
-    let dz1_1 = (t[2] - m[2]) / (t[1] - m[1] + 1.0);
-
-    // if there's no distinct middle point
-    let is_special = b[1] == m[1] || b[1] == t[1] || m[1] == t[1];
-
-    while y <= t[1] {
-        picture.draw_line(x0 as isize, y as isize, z0, x1 as isize, y as isize, z1, color);
-
-        x0 += dx0;
-        x1 += dx1;
-        z0 += dz0;
-        z1 += dz1;
-        y += 1.0;
-
-        // swap deltas if we passed the middle point
-        if y > m[1] && !is_special {
+    while y <= y_end {
+        // switch slopes if we mass the middle
+        if !flip && y >= y_mid {
+            flip = true;
+            dx1 = if distance2 != 0.0 { (t[0] - m[0]) / distance2 } else { 0.0 };
+            dz1 = if distance2 != 0.0 { (t[2] - m[2]) / distance2 } else { 0.0 };
             x1 = m[0];
-            dx1 = dx1_1;
             z1 = m[2];
-            dz1 = dz1_1;
         }
+
+        picture.draw_line(
+            x0 as isize,
+            y,
+            z0,
+            x1 as isize,
+            y,
+            z1,
+            color,
+        );
+
+        // increment
+        x0 += dx0;
+        z0 += dz0;
+        x1 += dx1;
+        z1 += dz1;
+        y += 1;
     }
 }
 
