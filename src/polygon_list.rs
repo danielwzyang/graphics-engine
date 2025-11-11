@@ -1,9 +1,11 @@
 type PolygonList = Vec<[f32; 4]>;
+type Vector = [f32; 3];
 
 use std::f32::consts::PI;
 use crate::picture::Picture;
 use crate::constants::{CUBE, ENABLE_BACK_FACE_CULLING, ENABLE_SCAN_LINE_CONVERSION, STEPS};
 use crate::matrix::add_point;
+use crate::lighting::get_illumination;
 
 pub fn add_polygon(m: &mut PolygonList, x0: f32, y0: f32, z0: f32, x1: f32, y1: f32, z1: f32, x2: f32, y2: f32, z2: f32) {
     add_point(m, x0, y0, z0, 1.0);
@@ -27,7 +29,7 @@ pub fn render_polygons(m: &PolygonList, picture: &mut Picture, color: &(usize, u
 
         // calculate the normal for backface culling using the cross product of two edges
         // normal = < aybz - azby, azbx - axbz, axby - aybx >
-        let normal: [f32; 3] = [
+        let normal: Vector = [
             a[1] * b[2] - a[2] * b[1],
             a[2] * b[0] - a[0] * b[2],
             a[0] * b[1] - a[1] * b[0],
@@ -45,6 +47,7 @@ pub fn render_polygons(m: &PolygonList, picture: &mut Picture, color: &(usize, u
 
         if normal[2] > 0.0 && ENABLE_BACK_FACE_CULLING {
             if ENABLE_SCAN_LINE_CONVERSION {
+                let color = get_illumination(&normal);
                 scan_line_conversion(picture, &polygon[0], &polygon[1], &polygon[2], &color);
             } else {
                 picture.draw_line(
@@ -153,7 +156,7 @@ fn scan_line_conversion(picture: &mut Picture, p0: &[f32; 4], p1: &[f32; 4], p2:
             x1 as isize,
             y,
             z1,
-            color,
+            &color,
         );
 
         // increment
@@ -204,7 +207,7 @@ pub fn add_sphere(m: &mut PolygonList, cx: f32, cy: f32, cz: f32, r: f32) {
     // we do STEPS + 1 because the semicircle generates one extra point for the south pole the way I coded it
     // e.g. a STEPS of 10 results in 11 points per semicircle
 
-    let get = |longitude: i32, latitude: i32| -> [f32; 3] {
+    let get = |longitude: i32, latitude: i32| -> Vector {
         points[(longitude * (STEPS + 1) + latitude) as usize]
     };
 
@@ -255,13 +258,13 @@ pub fn add_sphere(m: &mut PolygonList, cx: f32, cy: f32, cz: f32, r: f32) {
     }
 }
 
-fn generate_sphere_points(cx: f32, cy: f32, cz: f32, r: f32) -> Vec<[f32; 3]> {
+fn generate_sphere_points(cx: f32, cy: f32, cz: f32, r: f32) -> Vec<Vector> {
     // not using run_parametric because this parametric is nested but the logic is the same
     let x = |cir: f32| r * (PI * cir).cos() + cx;
     let y = |rot: f32, cir: f32| r * (PI * cir).sin() * (2.0 * PI * rot).cos() + cy;
     let z = |rot: f32, cir: f32| r * (PI * cir).sin() * (2.0 * PI * rot).sin() + cz;
 
-    let mut point_list: Vec<[f32; 3]> = vec![];
+    let mut point_list: Vec<Vector> = vec![];
 
     for i in 0..=STEPS {
         let rot = i as f32 / STEPS as f32;
@@ -280,7 +283,7 @@ pub fn add_torus(m: &mut PolygonList, cx: f32, cy: f32, cz: f32, r1: f32, r2: f3
     // on is which part of the circle we're currently on
     // kind of silly names but longitude and latitude didn't make sense so i had to freestyle it
     // for the torus we can just use STEPS i.e. STEPS of 10 gives 10 points on each circle
-    let get = |around: i32, on: i32| -> [f32; 3] {
+    let get = |around: i32, on: i32| -> Vector {
         points[(around * (STEPS + 1) + on) as usize]
     };
 
@@ -292,31 +295,31 @@ pub fn add_torus(m: &mut PolygonList, cx: f32, cy: f32, cz: f32, r1: f32, r2: f3
             let p1_across = get(next, on);
             let p2_across = get(next, on + 1);
 
-            // p1, p2, p2_across
+            // p1, p2_across, p2
             add_polygon(m,
                 p1[0], p1[1], p1[2],
-                p2[0], p2[1], p2[2],
                 p2_across[0], p2_across[1], p2_across[2],
+                p2[0], p2[1], p2[2],
             );
 
-            // p1, p2_across, p1_across
+            // p1, p1_across, p2_across
             add_polygon(m,
                 p1[0], p1[1], p1[2],
-                p2_across[0], p2_across[1], p2_across[2],
                 p1_across[0], p1_across[1], p1_across[2],
+                p2_across[0], p2_across[1], p2_across[2],
             );
         }
     }
 }
 
-fn generate_torus_points(cx: f32, cy: f32, cz: f32, r1: f32, r2: f32) -> Vec<[f32; 3]> {
+fn generate_torus_points(cx: f32, cy: f32, cz: f32, r1: f32, r2: f32) -> Vec<Vector> {
     // r1 is the radius of the circle that makes up the torus
     // r2 is the radius of the entire torus (translation factor)
     let x = |rot: f32, cir: f32| (2.0 * PI * rot).cos() * (r1 * (2.0 * PI * cir).cos() + r2) + cx;
     let y = |cir: f32| r1 * (2.0 * PI * cir).sin() + cy;
     let z = |rot: f32, cir: f32| -1.0 * (2.0 * PI * rot).sin() * (r1 * (2.0 * PI * cir).cos() + r2) + cz;
 
-    let mut point_list: Vec<[f32; 3]> = vec![];
+    let mut point_list: Vec<Vector> = vec![];
 
     for i in 0..=STEPS {
         let rot = i as f32 / STEPS as f32;

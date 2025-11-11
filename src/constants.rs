@@ -46,3 +46,17 @@ pub const CUBE: [(usize, usize, usize); 12] = [
     (7, 5, 6),
     (7, 4, 5),
 ];
+
+/* LIGHTING */
+pub const AMBIENT_LIGHT_COLOR: [f32; 3] = [255.0, 255.0, 255.0];
+
+pub const POINT_LIGHT_COLOR: [f32; 3] = [255.0, 255.0, 255.0];
+pub const POINT_LIGHT_VECTOR: [f32; 3] = [1.0, 0.5, 1.0];
+
+pub const SPECULAR_EXPONENT: f32 = 5.0;
+
+pub const AMBIENT_REFLECTION: [f32; 3] = [0.1, 0.1, 0.1];
+pub const DIFFUSE_REFLECTION: [f32; 3] = [0.5, 0.5, 0.5];
+pub const SPECULAR_REFLECTION: [f32; 3] = [0.5, 0.5, 0.5];
+
+// note: viewer vector is always <0, 0, 1> so all the math for backface culling and lighting is hardcoded

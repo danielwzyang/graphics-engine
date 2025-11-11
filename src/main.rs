@@ -5,6 +5,7 @@ mod edge_list;
 mod polygon_list;
 mod parser;
 mod coordinate_stack;
+mod lighting;
 
 use std::error::Error;
 use std::env;
