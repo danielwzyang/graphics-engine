@@ -1,0 +1,19 @@
+push
+move
+250 220 0
+scale
+4 4 4
+
+push
+rotate
+x -50
+rotate
+z 50
+
+mesh
+meshes/stonehenge_ascii.stl
+
+save
+better_stonehenge.png
+
+display
