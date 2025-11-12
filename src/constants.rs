@@ -11,7 +11,7 @@ pub const ENABLE_Z_BUFFER: bool = true;
 
 // only use gourand and phong when there's no big flat surfaces e.g boxes
 // boxes will appear fuzzy since we're averaging vertex normals
-// flat look sfine if PARAMETRIC_STEPS is larger
+// flat looks fine if PARAMETRIC_STEPS is larger
 pub enum ShadingMode {
     Flat,
     Gourand,
