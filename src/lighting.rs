@@ -3,6 +3,7 @@ type Vector = [f32; 3];
 use crate::constants::{AMBIENT_LIGHT_COLOR, AMBIENT_REFLECTION, DIFFUSE_REFLECTION, POINT_LIGHT_COLOR, POINT_LIGHT_VECTOR, SPECULAR_EXPONENT, SPECULAR_REFLECTION};
 
 pub fn get_illumination(normal: &Vector) -> (usize, usize, usize) {
+    let normal = &normalize_vector(&normal);
     let point_light_vector = normalize_vector(&POINT_LIGHT_VECTOR);
 
     // i_ambient = ambient color * ambient reflection constant
