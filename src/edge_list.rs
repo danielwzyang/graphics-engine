@@ -2,7 +2,7 @@ type EdgeList = Vec<[f32; 4]>;
 
 use std::f32::consts::PI;
 use crate::picture::Picture;
-use crate::constants::{STEPS, HERMITE, BEZIER};
+use crate::constants::{PARAMETRIC_STEPS, HERMITE, BEZIER};
 use crate::matrix::{add_point, multiply};
 
 pub fn add_edge(m: &mut EdgeList, x0: f32, y0: f32, z0: f32, x1: f32, y1: f32, z1: f32) {
@@ -29,8 +29,8 @@ fn run_parametric<X, Y>(m: &mut EdgeList, x: X, y: Y, z: Option<f32>)
     let mut last_point = (x(0.0), y(0.0), z_val);
 
     // t -> 1
-    for i in 0..=STEPS {
-        let t = i as f32 / STEPS as f32;
+    for i in 0..=PARAMETRIC_STEPS {
+        let t = i as f32 / PARAMETRIC_STEPS as f32;
         let current_point = (x(t), y(t), z_val);
 
         add_edge(

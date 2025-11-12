@@ -4,7 +4,7 @@ type Vector = [f32; 3];
 use std::f32::consts::PI;
 use std::collections::HashMap;
 use crate::picture::Picture;
-use crate::constants::{CUBE, ENABLE_BACK_FACE_CULLING, ENABLE_SCAN_LINE_CONVERSION, ShadingMode, SHADING_MODE, STEPS};
+use crate::constants::{CUBE, ENABLE_BACK_FACE_CULLING, ENABLE_SCAN_LINE_CONVERSION, ShadingMode, SHADING_MODE, PARAMETRIC_STEPS};
 use crate::matrix::add_point;
 use crate::lighting::get_illumination;
 use crate::scan_line;
@@ -183,17 +183,17 @@ pub fn add_box(m: &mut PolygonList, x: f32, y: f32, z: f32, w: f32, h: f32, d: f
 pub fn add_sphere(m: &mut PolygonList, cx: f32, cy: f32, cz: f32, r: f32) {
     let points = generate_sphere_points(cx, cy, cz, r);
 
-    // we do STEPS + 1 because the semicircle generates one extra point for the south pole the way I coded it
-    // e.g. a STEPS of 10 results in 11 points per semicircle
+    // we do PARAMETRIC_STEPS + 1 because the semicircle generates one extra point for the south pole the way I coded it
+    // e.g. a PARAMETRIC_STEPS of 10 results in 11 points per semicircle
 
     let get = |longitude: i32, latitude: i32| -> Vector {
-        points[(longitude * (STEPS + 1) + latitude) as usize]
+        points[(longitude * (PARAMETRIC_STEPS + 1) + latitude) as usize]
     };
 
-    for longitude in 0..STEPS {
-        let next = if longitude == STEPS { 0 } else { longitude + 1 };
+    for longitude in 0..PARAMETRIC_STEPS {
+        let next = if longitude == PARAMETRIC_STEPS { 0 } else { longitude + 1 };
         // this is for all the polygons that aren't on the poles
-        for latitude in 1..STEPS-1 {
+        for latitude in 1..PARAMETRIC_STEPS-1 {
             let p1 = get(longitude, latitude);
             let p2 = get(longitude, latitude + 1);
             let p1_across = get(next, latitude);
@@ -226,9 +226,9 @@ pub fn add_sphere(m: &mut PolygonList, cx: f32, cy: f32, cz: f32, r: f32) {
         );
 
         // pole, pminus1_across, pminus1
-        let pole = get(longitude, STEPS);
-        let p = get(longitude, STEPS - 1);
-        let p_across = get(next, STEPS - 1);
+        let pole = get(longitude, PARAMETRIC_STEPS);
+        let p = get(longitude, PARAMETRIC_STEPS - 1);
+        let p_across = get(next, PARAMETRIC_STEPS - 1);
         add_polygon(m,
             pole[0], pole[1], pole[2],
             p_across[0], p_across[1], p_across[2],
@@ -245,10 +245,10 @@ fn generate_sphere_points(cx: f32, cy: f32, cz: f32, r: f32) -> Vec<Vector> {
 
     let mut point_list: Vec<Vector> = vec![];
 
-    for i in 0..=STEPS {
-        let rot = i as f32 / STEPS as f32;
-        for j in 0..=STEPS {
-            let cir = j as f32 / STEPS as f32;
+    for i in 0..=PARAMETRIC_STEPS {
+        let rot = i as f32 / PARAMETRIC_STEPS as f32;
+        for j in 0..=PARAMETRIC_STEPS {
+            let cir = j as f32 / PARAMETRIC_STEPS as f32;
             point_list.push([x(cir), y(rot, cir), z(rot, cir)]);
         }
     }
@@ -261,14 +261,14 @@ pub fn add_torus(m: &mut PolygonList, cx: f32, cy: f32, cz: f32, r1: f32, r2: f3
     // around is which circle of the torus we're currently on
     // on is which part of the circle we're currently on
     // kind of silly names but longitude and latitude didn't make sense so i had to freestyle it
-    // for the torus we can just use STEPS i.e. STEPS of 10 gives 10 points on each circle
+    // for the torus we can just use PARAMETRIC_STEPS i.e. PARAMETRIC_STEPS of 10 gives 10 points on each circle
     let get = |around: i32, on: i32| -> Vector {
-        points[(around * (STEPS + 1) + on) as usize]
+        points[(around * (PARAMETRIC_STEPS + 1) + on) as usize]
     };
 
-    for around in 0..STEPS {
-        let next = if around == STEPS { 0 } else { around + 1 };
-        for on in 0..STEPS {
+    for around in 0..PARAMETRIC_STEPS {
+        let next = if around == PARAMETRIC_STEPS { 0 } else { around + 1 };
+        for on in 0..PARAMETRIC_STEPS {
             let p1 = get(around, on);
             let p2 = get(around, on + 1);
             let p1_across = get(next, on);
@@ -300,10 +300,10 @@ fn generate_torus_points(cx: f32, cy: f32, cz: f32, r1: f32, r2: f32) -> Vec<Vec
 
     let mut point_list: Vec<Vector> = vec![];
 
-    for i in 0..=STEPS {
-        let rot = i as f32 / STEPS as f32;
-        for j in 0..=STEPS {
-            let cir = j as f32 / STEPS as f32;
+    for i in 0..=PARAMETRIC_STEPS {
+        let rot = i as f32 / PARAMETRIC_STEPS as f32;
+        for j in 0..=PARAMETRIC_STEPS {
+            let cir = j as f32 / PARAMETRIC_STEPS as f32;
             point_list.push([x(rot, cir), y(cir), z(rot, cir)]);
         }
     }

@@ -4,10 +4,14 @@
 pub const DEFAULT_SCRIPT: &str = "scripts/dino";
 pub const DEFAULT_PICTURE_DIMENSIONS: (usize, usize) = (500, 500);
 pub const DEFAULT_BACKGROUND_COLOR: (usize, usize, usize) = WHITE;
-pub const STEPS: i32 = 20; // parametric
+pub const PARAMETRIC_STEPS: i32 = 30;
 pub const ENABLE_BACK_FACE_CULLING: bool = true;
 pub const ENABLE_SCAN_LINE_CONVERSION: bool = true;
 pub const ENABLE_Z_BUFFER: bool = true;
+
+// only use gourand and phong when there's no big flat surfaces e.g boxes
+// boxes will appear fuzzy since we're averaging vertex normals
+// flat look sfine if PARAMETRIC_STEPS is larger
 pub enum ShadingMode {
     Flat,
     Gourand,
