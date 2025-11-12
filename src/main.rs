@@ -6,6 +6,7 @@ mod polygon_list;
 mod parser;
 mod coordinate_stack;
 mod lighting;
+mod scan_line;
 
 use std::error::Error;
 use std::env;

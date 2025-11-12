@@ -137,7 +137,7 @@ impl Picture {
         Ok(())
     }
 
-    fn plot(&mut self, x: usize, y: usize, z: f32, color: &(usize, usize, usize)) {
+    pub fn plot(&mut self, x: usize, y: usize, z: f32, color: &(usize, usize, usize)) {
         // ignore pixels out of bounds
         if y >= self.yres || x >= self.xres {
             return;

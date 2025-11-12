@@ -8,6 +8,12 @@ pub const STEPS: i32 = 20; // parametric
 pub const ENABLE_BACK_FACE_CULLING: bool = true;
 pub const ENABLE_SCAN_LINE_CONVERSION: bool = true;
 pub const ENABLE_Z_BUFFER: bool = true;
+pub enum ShadingMode {
+    Flat,
+    Gourand,
+    Phong,
+}
+pub const SHADING_MODE: ShadingMode = ShadingMode::Phong;
 
 /* COLORS */
 pub const WHITE: (usize, usize, usize) = (255, 255, 255);

@@ -2,10 +2,25 @@ type PolygonList = Vec<[f32; 4]>;
 type Vector = [f32; 3];
 
 use std::f32::consts::PI;
+use std::collections::HashMap;
 use crate::picture::Picture;
-use crate::constants::{CUBE, ENABLE_BACK_FACE_CULLING, ENABLE_SCAN_LINE_CONVERSION, STEPS};
+use crate::constants::{CUBE, ENABLE_BACK_FACE_CULLING, ENABLE_SCAN_LINE_CONVERSION, ShadingMode, SHADING_MODE, STEPS};
 use crate::matrix::add_point;
 use crate::lighting::get_illumination;
+use crate::scan_line;
+
+fn vector_to_key(vector: &[f32; 4]) -> (usize, usize, usize) {
+    (vector[0] as usize, vector[1] as usize, vector[2] as usize)
+}
+
+fn add_vectors(a: &Vector, b: &Vector) -> Vector {
+    [a[0] + b[0], a[1] + b[1], a[2] + b[2]]
+}
+
+fn normalize_vector(vector: &Vector) -> Vector {
+    let magnitude = (vector[0] * vector[0] + vector[1] * vector[1] + vector[2] * vector[2]).sqrt();
+    [vector[0] / magnitude, vector[1] / magnitude, vector[2] / magnitude]
+}
 
 pub fn add_polygon(m: &mut PolygonList, x0: f32, y0: f32, z0: f32, x1: f32, y1: f32, z1: f32, x2: f32, y2: f32, z2: f32) {
     add_point(m, x0, y0, z0, 1.0);
@@ -14,6 +29,43 @@ pub fn add_polygon(m: &mut PolygonList, x0: f32, y0: f32, z0: f32, x1: f32, y1: 
 }
 
 pub fn render_polygons(m: &PolygonList, picture: &mut Picture, color: &(usize, usize, usize)) {
+    // we need to keep a hash to get the average normal for every polygon that contains this vertex
+    // instead of getting averages we can sum up all the vectors and then normalize it at the end
+    // we need them to be normalized for lighting anyway
+    let mut vertex_normals: HashMap<(usize, usize, usize), Vector> = HashMap::new();
+
+    for polygon in m.chunks(3) {
+        let a = [
+            polygon[1][0] - polygon[0][0],
+            polygon[1][1] - polygon[0][1],
+            polygon[1][2] - polygon[0][2],
+        ];
+
+        let b = [
+            polygon[2][0] - polygon[0][0],
+            polygon[2][1] - polygon[0][1],
+            polygon[2][2] - polygon[0][2],
+        ];
+
+        // calculate the normal for backface culling using the cross product of two edges
+        // normal = < aybz - azby, azbx - axbz, axby - aybx >
+        let normal: Vector = [
+            a[1] * b[2] - a[2] * b[1],
+            a[2] * b[0] - a[0] * b[2],
+            a[0] * b[1] - a[1] * b[0],
+        ];
+
+        for vertex in polygon {
+            let entry = vertex_normals.entry(vector_to_key(&vertex)).or_insert([0.0, 0.0, 0.0]);
+
+            *entry = add_vectors(&entry, &normal);
+        }
+    }
+
+    for normal in vertex_normals.values_mut() {
+        *normal = normalize_vector(normal);
+    }
+
     for polygon in m.chunks(3) {
         let a = [
             polygon[1][0] - polygon[0][0],
@@ -47,8 +99,33 @@ pub fn render_polygons(m: &PolygonList, picture: &mut Picture, color: &(usize, u
 
         if normal[2] > 0.0 && ENABLE_BACK_FACE_CULLING {
             if ENABLE_SCAN_LINE_CONVERSION {
-                let color = get_illumination(&normal);
-                scan_line_conversion(picture, &polygon[0], &polygon[1], &polygon[2], &color);
+                match SHADING_MODE {
+                    ShadingMode::Flat => {
+                        scan_line::flat(
+                            picture, 
+                            polygon,
+                            &get_illumination(&normalize_vector(&normal))
+                        );
+                    },
+                    ShadingMode::Gourand => {
+                        let normals = [
+                            *vertex_normals.get(&vector_to_key(&polygon[0])).unwrap(),
+                            *vertex_normals.get(&vector_to_key(&polygon[1])).unwrap(),
+                            *vertex_normals.get(&vector_to_key(&polygon[2])).unwrap(),
+                        ];
+
+                        scan_line::gouraud(picture, polygon, normals);
+                    }
+                    ShadingMode::Phong => {
+                        let normals = [
+                            *vertex_normals.get(&vector_to_key(&polygon[0])).unwrap(),
+                            *vertex_normals.get(&vector_to_key(&polygon[1])).unwrap(),
+                            *vertex_normals.get(&vector_to_key(&polygon[2])).unwrap(),
+                        ];
+
+                        scan_line::phong(picture, polygon, normals);
+                    }
+                }
             } else {
                 picture.draw_line(
                     polygon[0][0] as isize, polygon[0][1] as isize, polygon[0][2],
@@ -67,104 +144,6 @@ pub fn render_polygons(m: &PolygonList, picture: &mut Picture, color: &(usize, u
                 );
             }
         }
-    }
-}
-
-fn scan_line_conversion(picture: &mut Picture, p0: &[f32; 4], p1: &[f32; 4], p2: &[f32; 4], color: &(usize, usize, usize)) {
-    // sort three points by their y values so we have a bottom top and middle
-    let mut b = [p0[0], p0[1], p0[2]];
-    let mut m = [p1[0], p1[1], p1[2]];
-    let mut t = [p2[0], p2[1], p2[2]];
-
-    if b[1] > m[1] {
-        std::mem::swap(&mut b, &mut m);
-    }
-    if m[1] > t[1] {
-        std::mem::swap(&mut m, &mut t);
-    }
-    if b[1] > m[1] {
-        std::mem::swap(&mut b, &mut m);
-    }
-
-    /*
-        scan line conversion works by drawing a bunch of horizontal lines to fill in the polygon
-        lets imagine triangle BMT
-
-            T
-
-                    M
-
-                B
-
-        as our horizontal lines move up from b, we need to figure out a delta x on each side to adjust our endpoints
-        in this case, the left side has a constant delta x which we will call dx0
-        on the right side, BM and MT have different slopes, so we will call them dx1 and dx1_1 respectively
-        we also do the same for the z values
-
-        dx0 = (xt - xb) / (yt - yb)
-        dx1 = (xm - xb) / (ym - yb)
-        dx1_1 = (xt - xm) / (yt - ym)
-
-        dz0 = (zt - zb) / (yt - yb)
-        dz1 = (zm - zb) / (ym - yb)
-        dz1_1 = (zt - zm) / (yt - ym)
-
-        we do have to be careful with triangles that have flat tops and flat bottoms though
-        honestly i'm not entirely sure what i did that fixed it, but i think it has to do with my flip boolean
-        before that my flat bottom triangles would have a weird NaN slope on the right side
-
-        also something REALLY annoying is cumulative floating point error which ends up with a lot of weird artifacts and gaps
-
-        to fix this i kind of spam integer conversion
-    */
-
-    let y_start = b[1] as isize;
-    let y_mid = m[1] as isize;
-    let y_end = t[1] as isize;
-
-    let distance0 = (y_end - y_start) as f32 + 1.0;
-    let distance1 = (y_mid - y_start) as f32 + 1.0;
-    let distance2 = (y_end - y_mid) as f32 + 1.0;
-
-    let dx0 = if distance0 != 0.0 { (t[0] - b[0]) / distance0 } else { 0.0 };
-    let dz0 = if distance0 != 0.0 { (t[2] - b[2]) / distance0 } else { 0.0 };
-    let mut dx1 = if distance1 != 0.0 { (m[0] - b[0]) / distance1 } else { 0.0 };
-    let mut dz1 = if distance1 != 0.0 { (m[2] - b[2]) / distance1 } else { 0.0 };
-
-    let mut x0 = b[0];
-    let mut z0 = b[2];
-    let mut x1 = b[0];
-    let mut z1 = b[2];
-
-    let mut flip = false;
-    let mut y = y_start;
-
-    while y <= y_end {
-        // switch slopes if we mass the middle
-        if !flip && y >= y_mid {
-            flip = true;
-            dx1 = if distance2 != 0.0 { (t[0] - m[0]) / distance2 } else { 0.0 };
-            dz1 = if distance2 != 0.0 { (t[2] - m[2]) / distance2 } else { 0.0 };
-            x1 = m[0];
-            z1 = m[2];
-        }
-
-        picture.draw_line(
-            x0 as isize,
-            y,
-            z0,
-            x1 as isize,
-            y,
-            z1,
-            &color,
-        );
-
-        // increment
-        x0 += dx0;
-        z0 += dz0;
-        x1 += dx1;
-        z1 += dz1;
-        y += 1;
     }
 }
 

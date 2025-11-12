@@ -3,7 +3,6 @@ type Vector = [f32; 3];
 use crate::constants::{AMBIENT_LIGHT_COLOR, AMBIENT_REFLECTION, DIFFUSE_REFLECTION, POINT_LIGHT_COLOR, POINT_LIGHT_VECTOR, SPECULAR_EXPONENT, SPECULAR_REFLECTION};
 
 pub fn get_illumination(normal: &Vector) -> (usize, usize, usize) {
-    let normal = normalize_vector(normal);
     let point_light_vector = normalize_vector(&POINT_LIGHT_VECTOR);
 
     // i_ambient = ambient color * ambient reflection constant
@@ -48,17 +47,13 @@ fn dot_product(a: &Vector, b: &Vector) -> f32 {
 
 fn normalize_vector(vector: &Vector) -> Vector {
     let magnitude = (vector[0] * vector[0] + vector[1] * vector[1] + vector[2] * vector[2]).sqrt();
-    [
-        vector[0] / magnitude,
-        vector[1] / magnitude,
-        vector[2] / magnitude,
-    ]
+    [vector[0] / magnitude, vector[1] / magnitude, vector[2] / magnitude]
 }
 
 fn clamp_color(vector: Vector) -> (usize, usize, usize) {
     (
-        f32::min(vector[0], 255.0) as usize,
-        f32::min(vector[1], 255.0) as usize,
-        f32::min(vector[2], 255.0) as usize,
+        vector[0].clamp(0.0, 255.0) as usize,
+        vector[1].clamp(0.0, 255.0) as usize,
+        vector[2].clamp(0.0, 255.0) as usize,
     )
 }
