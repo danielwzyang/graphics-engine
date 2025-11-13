@@ -29,41 +29,47 @@ pub fn add_polygon(m: &mut PolygonList, x0: f32, y0: f32, z0: f32, x1: f32, y1: 
 }
 
 pub fn render_polygons(m: &PolygonList, picture: &mut Picture, color: &(usize, usize, usize)) {
+    // for gourand and phong shading
     // we need to keep a hash to get the average normal for every polygon that contains this vertex
     // instead of getting averages we can sum up all the vectors and then normalize it at the end
     // we need them to be normalized for lighting anyway
     let mut vertex_normals: HashMap<(usize, usize, usize), Vector> = HashMap::new();
 
-    for polygon in m.chunks(3) {
-        let a = [
-            polygon[1][0] - polygon[0][0],
-            polygon[1][1] - polygon[0][1],
-            polygon[1][2] - polygon[0][2],
-        ];
+    match SHADING_MODE {
+        ShadingMode::Gourand | ShadingMode::Phong => {
+            for polygon in m.chunks(3) {
+            let a = [
+                polygon[1][0] - polygon[0][0],
+                polygon[1][1] - polygon[0][1],
+                polygon[1][2] - polygon[0][2],
+            ];
 
-        let b = [
-            polygon[2][0] - polygon[0][0],
-            polygon[2][1] - polygon[0][1],
-            polygon[2][2] - polygon[0][2],
-        ];
+            let b = [
+                polygon[2][0] - polygon[0][0],
+                polygon[2][1] - polygon[0][1],
+                polygon[2][2] - polygon[0][2],
+            ];
 
-        // calculate the normal for backface culling using the cross product of two edges
-        // normal = < aybz - azby, azbx - axbz, axby - aybx >
-        let normal: Vector = [
-            a[1] * b[2] - a[2] * b[1],
-            a[2] * b[0] - a[0] * b[2],
-            a[0] * b[1] - a[1] * b[0],
-        ];
+            // calculate the normal for backface culling using the cross product of two edges
+            // normal = < aybz - azby, azbx - axbz, axby - aybx >
+            let normal: Vector = [
+                a[1] * b[2] - a[2] * b[1],
+                a[2] * b[0] - a[0] * b[2],
+                a[0] * b[1] - a[1] * b[0],
+            ];
 
-        for vertex in polygon {
-            let entry = vertex_normals.entry(vector_to_key(&vertex)).or_insert([0.0, 0.0, 0.0]);
+            for vertex in polygon {
+                let entry = vertex_normals.entry(vector_to_key(&vertex)).or_insert([0.0, 0.0, 0.0]);
 
-            *entry = add_vectors(&entry, &normal);
+                *entry = add_vectors(&entry, &normal);
+            }
         }
-    }
 
-    for normal in vertex_normals.values_mut() {
-        *normal = normalize_vector(normal);
+        for normal in vertex_normals.values_mut() {
+            *normal = normalize_vector(normal);
+        }
+        }
+        _ => {}
     }
 
     for polygon in m.chunks(3) {
