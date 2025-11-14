@@ -5,4 +5,5 @@ edition = "2024"
 
 [dependencies]
 image = { version = "0.25", default-features = false, features = ["png"] }
+regex = "1.12.2"
 show-image = "0.14"
