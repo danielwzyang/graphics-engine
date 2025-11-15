@@ -216,9 +216,9 @@ fn handle_mesh(
         if line.starts_with("v ") || line.starts_with("vertex ") {
             vertices.push([parts[1].parse::<f32>()?, parts[2].parse::<f32>()?, parts[3].parse::<f32>()?]);
         } else if line.starts_with("f ") {
-            let a = parts[1].parse::<usize>()?;
-            let b = parts[2].parse::<usize>()?;
-            let c = parts[3].parse::<usize>()?;
+            let a = parts[1].parse::<usize>()? - 1;
+            let b = parts[2].parse::<usize>()? - 1;
+            let c = parts[3].parse::<usize>()? - 1;
 
             add_polygon(
                 &mut context.polygons,
