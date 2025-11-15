@@ -1,7 +1,7 @@
 #![allow(dead_code)]
 
 /* CONFIG */
-pub const DEFAULT_SCRIPT: &str = "scripts/dino";
+pub const DEFAULT_SCRIPT: &str = "scripts/stonehenge.mdl";
 pub const DEFAULT_PICTURE_DIMENSIONS: (usize, usize) = (500, 500);
 pub const DEFAULT_BACKGROUND_COLOR: (usize, usize, usize) = WHITE;
 pub const DEFAULT_FOREGROUND_COLOR: (usize, usize, usize) = BLUE;
