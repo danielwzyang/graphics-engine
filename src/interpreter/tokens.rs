@@ -1,11 +1,39 @@
+#[derive(Debug)]
 pub struct Token {
-    value: String,
-    token_type: TokenType
+    pub value: String,
+    pub token_type: TokenType,
 }
 
+#[derive(Clone, Copy, Debug)]
 pub enum TokenType {
-    Define,
-    Command,
-    Number,
+    Command(Function),
     AxisOfRotation,
+    Number,
+    FilePath,
+    Identifier,
+}
+
+#[derive(Clone, Copy, Debug)]
+pub enum Function {
+    Display,
+    Save,
+    Clear,
+    Push,
+    Pop,
+    Move,
+    Scale,
+    Rotate,
+    Line,
+    Circle,
+    Hermite,
+    Bezier,
+    Polygon,
+    Box,
+    Sphere,
+    Torus,
+    Mesh,
+    Light,
+    Ambient,
+    Constants,
+    Shading,
 }

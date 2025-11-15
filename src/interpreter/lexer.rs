@@ -3,13 +3,14 @@ use super::tokens::{Token, TokenType};
 use regex::Regex;
 use std::collections::HashMap;
 
+// Regex patterns for different token types
 
-pub fn tokenize(path: &str) -> Result<Vec<Token>, Box<dyn Error>> {
-    const keywords: HashMap<&str, TokenType> = HashMap::new();
+pub fn tokenize(path: &str, keywords: HashMap<&str, TokenType>) -> Result<Vec<Token>, Box<dyn Error>> {
+    let mut tokens: Vec<Token> = vec![];
 
-    keywords.insert("constants", TokenType::Define);
-
-    let tokens: Vec<Token> = vec![];
+    let number_regex = Regex::new(r"^-?(\d+\.?\d*|\.\d+)([eE][+-]?\d+)?$").unwrap();
+    let identifier_regex = Regex::new(r"^[a-zA-Z_][a-zA-Z0-9_]*$").unwrap();
+    let file_path_regex = Regex::new(r"^(\.{0,2}/)?([a-zA-Z0-9_\-./]*[a-zA-Z0-9_\-])?\.([a-zA-Z0-9]+)$").unwrap();
 
     let lines = read_lines(path).map_err(|_| format!("'{}' not found", path))?;
 
@@ -18,22 +19,59 @@ pub fn tokenize(path: &str) -> Result<Vec<Token>, Box<dyn Error>> {
     while let Some(line) = iterator.next() {
         let line = line.trim();
 
-        if line.starts_with("#") || line.starts_with("//") {
+        // ignore comments
+        if line.starts_with("//") || line.starts_with("#") {
             continue;
         }
 
+        // convert line to token strings
         let current = line.split_whitespace().collect::<Vec<&str>>();
 
         for token in current {
-
+            // keyword
+            if let Some(token_type) = keywords.get(token) {
+                tokens.push(Token { 
+                    value: token.to_string(), 
+                    token_type: token_type.clone() 
+                });
+            } 
+            
+            // number
+            else if number_regex.is_match(token) {
+                tokens.push(Token {
+                    value: token.to_string(),
+                    token_type: TokenType::Number,
+                });
+            } 
+            
+            // file path
+            else if file_path_regex.is_match(token) {
+                tokens.push(Token {
+                    value: token.to_string(),
+                    token_type: TokenType::FilePath,
+                });
+            } 
+            
+            // identifier
+            else if identifier_regex.is_match(token) {
+                tokens.push(Token {
+                    value: token.to_string(),
+                    token_type: TokenType::Identifier,
+                });
+            } 
+            
+            // probably won't happen as identifier is basically a catch-all for our script
+            else {
+                println!("Token not recognized: {}", token);
+            }
         }
     }
 
-    Ok((tokens))
+    Ok(tokens)
 }
 
-fn read_lines<P>(filename: P) -> io::Result<io::Lines<io::BufReader<File>>>
+fn read_lines<P>(file_path: P) -> io::Result<io::Lines<io::BufReader<File>>>
 where P: AsRef<Path> {
-    let file = File::open(filename)?;
+    let file = File::open(file_path)?;
     Ok(io::BufReader::new(file).lines())
 }
