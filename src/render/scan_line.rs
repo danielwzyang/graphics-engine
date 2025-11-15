@@ -1,6 +1,9 @@
-use crate::picture::Picture;
+use super::{
+    Picture,
+    lighting::{LightingConfig, ReflectionConstants, get_illumination},
+};
+
 type Vector = [f32; 3];
-use crate::lighting::{LightingConfig, ReflectionConstants, get_illumination};
 
 // i'm aware there's a lot of repeating code for all 3 functions,
 // but i wanted each function to be more readable so bear with me

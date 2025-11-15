@@ -1,13 +1,19 @@
 type PolygonList = Vec<[f32; 4]>;
 type Vector = [f32; 3];
 
-use std::f32::consts::PI;
-use std::collections::HashMap;
-use crate::picture::Picture;
-use crate::constants::{CUBE, ENABLE_BACK_FACE_CULLING, ENABLE_SCAN_LINE_CONVERSION, PARAMETRIC_STEPS, ShadingMode};
-use crate::matrix::add_point;
-use crate::lighting::{LightingConfig, ReflectionConstants, get_illumination};
-use crate::scan_line;
+use std::{
+    f32::consts::PI,
+    collections::HashMap,
+};
+
+use crate::{
+    constants::{CUBE, ENABLE_BACK_FACE_CULLING, ENABLE_SCAN_LINE_CONVERSION, PARAMETRIC_STEPS, ShadingMode},
+    matrix::add_point,
+};
+use super::{
+    scan_line,
+    Picture, LightingConfig, ReflectionConstants, get_illumination,
+};
 
 fn vector_to_key(vector: &[f32; 4]) -> (isize, isize, isize) {
     (vector[0].round() as isize, vector[1].round() as isize, vector[2].round() as isize)

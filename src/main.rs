@@ -1,15 +1,10 @@
 mod constants;
-mod picture;
 mod matrix;
-mod edge_list;
-mod polygon_list;
-mod coordinate_stack;
-mod lighting;
-mod scan_line;
+mod picture;
+mod render;
 mod interpreter;
 
-use std::error::Error;
-use std::env;
+use std::{error::Error, env};
 #[show_image::main]
 fn main() -> Result<(), Box<dyn Error>> {
     let arguments: Vec<String> = env::args().collect();

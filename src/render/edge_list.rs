@@ -1,9 +1,12 @@
-type EdgeList = Vec<[f32; 4]>;
-
 use std::f32::consts::PI;
-use crate::picture::Picture;
-use crate::constants::{PARAMETRIC_STEPS, HERMITE, BEZIER};
-use crate::matrix::{add_point, multiply};
+
+use crate::{
+    constants::{PARAMETRIC_STEPS, HERMITE, BEZIER},
+    matrix::add_point,
+};
+use super::Picture;
+
+type EdgeList = Vec<[f32; 4]>;
 
 pub fn add_edge(m: &mut EdgeList, x0: f32, y0: f32, z0: f32, x1: f32, y1: f32, z1: f32) {
     add_point(m, x0, y0, z0, 1.0);
@@ -55,7 +58,7 @@ pub fn add_circle(m: &mut EdgeList, cx: f32, cy: f32, cz: f32, r: f32) {
 pub fn add_hermite_curve(m: &mut EdgeList, x0: f32, y0: f32, x1: f32, y1: f32, rx0: f32, ry0: f32, rx1: f32, ry1: f32) {
     // find coefficients for for at^3 + bt^2 + ct + d
     let mut g = vec![[x0, x1, rx0, rx1], [y0, y1, ry0, ry1]];
-    multiply(&HERMITE, &mut g);
+    crate::matrix::multiply(&HERMITE, &mut g);
 
     let x = |t: f32| t * (t * (t * g[0][0] + g[0][1]) + g[0][2]) + g[0][3];
     let y = |t: f32| t * (t * (t * g[1][0] + g[1][1]) + g[1][2]) + g[1][3];
@@ -66,7 +69,7 @@ pub fn add_hermite_curve(m: &mut EdgeList, x0: f32, y0: f32, x1: f32, y1: f32, r
 pub fn add_bezier_curve(m: &mut EdgeList, x0: f32, y0: f32, x1: f32, y1: f32, x2: f32, y2: f32, x3: f32, y3: f32) {
     // find coefficients for for at^3 + bt^2 + ct + d
     let mut g = vec![[x0, x1, x2, x3], [y0, y1, y2, y3]];
-    multiply(&BEZIER, &mut g);
+    crate::matrix::multiply(&BEZIER, &mut g);
 
     let x = |t: f32| t * (t * (t * g[0][0] + g[0][1]) + g[0][2]) + g[0][3];
     let y = |t: f32| t * (t * (t * g[1][0] + g[1][1]) + g[1][2]) + g[1][3];

@@ -1,19 +1,25 @@
 #![allow(dead_code)]
 
-use std::collections::HashMap;
-use std::error::Error;
-use std::path::Path;
+use std::{
+    collections::HashMap,
+    error::Error,
+    path::Path,
+};
 
-use crate::constants::{DEFAULT_BACKGROUND_COLOR, DEFAULT_FOREGROUND_COLOR, DEFAULT_PICTURE_DIMENSIONS, ShadingMode};
-use crate::lighting::{LightingConfig, ReflectionConstants};
-use crate::matrix;
-use crate::coordinate_stack::CoordinateStack;
-use crate::picture::Picture;
-use crate::edge_list::{render_edges, add_bezier_curve, add_circle, add_edge, add_hermite_curve};
-use crate::polygon_list::{add_box, add_polygon, add_sphere, add_torus, render_polygons};
-
-use super::parser::Command;
-use super::read_lines;
+use crate::{
+    constants::{DEFAULT_BACKGROUND_COLOR, DEFAULT_FOREGROUND_COLOR, DEFAULT_PICTURE_DIMENSIONS, ShadingMode},
+    matrix,
+    render::{self, LightingConfig, Picture, ReflectionConstants},
+};
+use super::{
+    coordinate_stack::CoordinateStack,
+    parser::Command,
+    read_lines,
+};
+use render::{
+    edge_list::{add_bezier_curve, add_circle, add_edge, add_hermite_curve, render_edges},
+    polygon_list::{add_box, add_polygon, add_sphere, add_torus, render_polygons},
+};
 
 type Matrix = Vec<[f32; 4]>;
 
@@ -73,7 +79,7 @@ impl ScriptContext {
             }
         }
         
-        matrix::multiply(&self.coordinate_stack.peek(), &mut self.polygons);
+        crate::matrix::multiply(&self.coordinate_stack.peek(), &mut self.polygons);
         render_polygons(&self.polygons, &mut self.picture, &DEFAULT_FOREGROUND_COLOR, &self.shading_mode, &self.lighting_config, reflection_constants);
         self.polygons = matrix::new();
 

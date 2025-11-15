@@ -2,11 +2,20 @@ mod lexer;
 mod tokens;
 mod parser;
 mod evaluate;
+pub mod coordinate_stack;
+
+use std::{
+    error::Error,
+    collections::HashMap,
+    sync::LazyLock,
+    io::{self, BufRead},
+    fs::File,
+    path::Path,
+};
 
 use parser::Parser;
 use evaluate::evaluate_syntax_tree;
 use tokens::{TokenType, Function};
-use std::{error::Error, collections::HashMap, sync::LazyLock, io, io::BufRead, fs::File, path::Path};
 
 static KEYWORDS: LazyLock<HashMap<&str, TokenType>> = LazyLock::new(|| {
     let mut map = HashMap::new();

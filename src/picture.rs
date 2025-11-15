@@ -1,7 +1,9 @@
-use std::fs::File;
-use std::io::Write;
-use std::error::Error;
-use std::path::Path;
+use std::{
+    fs::File,
+    io::Write,
+    error::Error,
+    path::Path,
+};
 
 use crate::constants::ENABLE_Z_BUFFER;
 use image::{ImageBuffer, Rgb};

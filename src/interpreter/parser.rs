@@ -1,10 +1,14 @@
 #![allow(dead_code)]
 
-use std::error::Error;
-use std::collections::VecDeque;
+use std::{
+    error::Error,
+    collections::VecDeque,
+};
 
-use crate::{constants::ShadingMode, matrix::Rotation};
-
+use crate::{
+    constants::ShadingMode,
+    matrix::Rotation,
+};
 use super::tokens::{Token, TokenType, Function};
 
 // file paths +  identifiers stored as String

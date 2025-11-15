@@ -1,8 +1,10 @@
-use std::error::Error;
-use super::tokens::{Token, TokenType};
+use std::{
+    error::Error,
+    collections::{HashMap, VecDeque},
+};
+
 use regex::Regex;
-use std::collections::{HashMap, VecDeque};
-use super::read_lines;
+use super::{tokens::{Token, TokenType}, read_lines};
 
 // Regex patterns for different token types
 
