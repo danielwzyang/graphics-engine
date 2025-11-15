@@ -6,7 +6,7 @@ use std::collections::HashMap;
 use crate::picture::Picture;
 use crate::constants::{CUBE, ENABLE_BACK_FACE_CULLING, ENABLE_SCAN_LINE_CONVERSION, PARAMETRIC_STEPS, ShadingMode};
 use crate::matrix::add_point;
-use crate::lighting::{LightingConfig, get_illumination};
+use crate::lighting::{LightingConfig, ReflectionConstants, get_illumination};
 use crate::scan_line;
 
 fn vector_to_key(vector: &[f32; 4]) -> (usize, usize, usize) {
@@ -28,7 +28,10 @@ pub fn add_polygon(m: &mut PolygonList, x0: f32, y0: f32, z0: f32, x1: f32, y1: 
     add_point(m, x2, y2, z2, 1.0);
 }
 
-pub fn render_polygons(m: &PolygonList, picture: &mut Picture, color: &(usize, usize, usize), shading_mode: &ShadingMode, lighting_config: &LightingConfig) {
+pub fn render_polygons(
+    m: &PolygonList, picture: &mut Picture, color: &(usize, usize, usize), 
+    shading_mode: &ShadingMode, lighting_config: &LightingConfig, reflection_constants: &ReflectionConstants
+) {
     // for gouraud and phong shading
     // we need to keep a hash to get the average normal for every polygon that contains this vertex
     // instead of getting averages we can sum up all the vectors and then normalize it at the end
@@ -110,7 +113,7 @@ pub fn render_polygons(m: &PolygonList, picture: &mut Picture, color: &(usize, u
                         scan_line::flat(
                             picture, 
                             polygon,
-                            &get_illumination(&normalize_vector(&normal), &lighting_config)
+                            &get_illumination(&normalize_vector(&normal), lighting_config, reflection_constants)
                         );
                     },
                     ShadingMode::Gouraud => {
@@ -120,7 +123,7 @@ pub fn render_polygons(m: &PolygonList, picture: &mut Picture, color: &(usize, u
                             *vertex_normals.get(&vector_to_key(&polygon[2])).unwrap(),
                         ];
 
-                        scan_line::gouraud(picture, polygon, normals, lighting_config);
+                        scan_line::gouraud(picture, polygon, normals, lighting_config, reflection_constants);
                     }
                     ShadingMode::Phong => {
                         let normals = [
@@ -129,7 +132,7 @@ pub fn render_polygons(m: &PolygonList, picture: &mut Picture, color: &(usize, u
                             *vertex_normals.get(&vector_to_key(&polygon[2])).unwrap(),
                         ];
 
-                        scan_line::phong(picture, polygon, normals, lighting_config);
+                        scan_line::phong(picture, polygon, normals, lighting_config, reflection_constants);
                     }
                 }
             } else {

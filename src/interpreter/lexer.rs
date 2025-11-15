@@ -1,7 +1,8 @@
-use std::{error::Error, io, io::BufRead, fs::File, path::Path};
+use std::error::Error;
 use super::tokens::{Token, TokenType};
 use regex::Regex;
 use std::collections::{HashMap, VecDeque};
+use super::read_lines;
 
 // Regex patterns for different token types
 
@@ -12,7 +13,7 @@ pub fn tokenize(path: &str, keywords: HashMap<&str, TokenType>) -> Result<VecDeq
     let identifier_regex = Regex::new(r"^[a-zA-Z_][a-zA-Z0-9_]*$").unwrap();
     let file_path_regex = Regex::new(r"^(\.{0,2}/)?([a-zA-Z0-9_\-./]*[a-zA-Z0-9_\-])?\.([a-zA-Z0-9]+)$").unwrap();
 
-    let lines = read_lines(path).map_err(|_| format!("'{}' not found", path))?;
+    let lines = read_lines(path).map_err(|_| format!("Script '{}' not found", path))?;
 
     let mut iterator = lines.map_while(Result::ok).enumerate();
 
@@ -67,10 +68,4 @@ pub fn tokenize(path: &str, keywords: HashMap<&str, TokenType>) -> Result<VecDeq
     }
 
     Ok(tokens)
-}
-
-fn read_lines<P>(file_path: P) -> io::Result<io::Lines<io::BufReader<File>>>
-where P: AsRef<Path> {
-    let file = File::open(file_path)?;
-    Ok(io::BufReader::new(file).lines())
 }

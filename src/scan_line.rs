@@ -1,6 +1,6 @@
 use crate::picture::Picture;
 type Vector = [f32; 3];
-use crate::lighting::{LightingConfig, get_illumination};
+use crate::lighting::{LightingConfig, ReflectionConstants, get_illumination};
 
 // i'm aware there's a lot of repeating code for all 3 functions,
 // but i wanted each function to be more readable so bear with me
@@ -117,6 +117,7 @@ pub fn gouraud(
     polygon: &[[f32; 4]], 
     normals: [Vector; 3],
     lighting_config: &LightingConfig,
+    reflection_constants: &ReflectionConstants,
 ) {
     let p0 = polygon[0];
     let p1 = polygon[1];
@@ -128,9 +129,9 @@ pub fn gouraud(
     
     // we need to sort the colors too
     // the difference between this and phong is that phong we will interpolate by normals instead of colors
-    let mut color_b = get_illumination(&normals[0], lighting_config);
-    let mut color_m = get_illumination(&normals[1], lighting_config);
-    let mut color_t = get_illumination(&normals[2], lighting_config);
+    let mut color_b = get_illumination(&normals[0], lighting_config, reflection_constants);
+    let mut color_m = get_illumination(&normals[1], lighting_config, reflection_constants);
+    let mut color_t = get_illumination(&normals[2], lighting_config, reflection_constants);
     
     if b[1] > m[1] {
         std::mem::swap(&mut b, &mut m);
@@ -270,6 +271,7 @@ pub fn phong(
     polygon: &[[f32; 4]], 
     normals: [Vector; 3],
     lighting_config: &LightingConfig,
+    reflection_constants: &ReflectionConstants,
 ) {
     let p0 = polygon[0];
     let p1 = polygon[1];
@@ -384,7 +386,7 @@ pub fn phong(
         
         for x in x_start..=x_end {
             // this time we compute light based on our interpolated normal
-            picture.plot(x, y, z, &get_illumination(&[nx, ny, nz], lighting_config));
+            picture.plot(x, y, z, &get_illumination(&[nx, ny, nz], lighting_config, reflection_constants));
             
             z += dz;
             nx += dnx;

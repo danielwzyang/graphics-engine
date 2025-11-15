@@ -4,7 +4,8 @@
 pub const DEFAULT_SCRIPT: &str = "scripts/dino";
 pub const DEFAULT_PICTURE_DIMENSIONS: (usize, usize) = (500, 500);
 pub const DEFAULT_BACKGROUND_COLOR: (usize, usize, usize) = WHITE;
-pub const PARAMETRIC_STEPS: i32 = 30;
+pub const DEFAULT_FOREGROUND_COLOR: (usize, usize, usize) = BLUE;
+pub const PARAMETRIC_STEPS: i32 = 100;
 pub const ENABLE_BACK_FACE_CULLING: bool = true;
 pub const ENABLE_SCAN_LINE_CONVERSION: bool = true;
 pub const ENABLE_Z_BUFFER: bool = true;
@@ -20,7 +21,7 @@ pub enum ShadingMode {
 }
 pub const SHADING_MODE: ShadingMode = ShadingMode::Phong;
 
-pub const SPECULAR_EXPONENT: f32 = 5.0;
+pub const SPECULAR_EXPONENT: f32 = 4.0;
 
 /* COLORS */
 pub const WHITE: (usize, usize, usize) = (255, 255, 255);

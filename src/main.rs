@@ -6,7 +6,7 @@ mod polygon_list;
 mod coordinate_stack;
 mod lighting;
 mod scan_line;
-mod parser;
+mod interpreter;
 
 use std::error::Error;
 use std::env;
@@ -19,5 +19,5 @@ fn main() -> Result<(), Box<dyn Error>> {
         &String::from(constants::DEFAULT_SCRIPT)
     } else { &arguments[1] };
 
-    parser::read_script(path)
+    interpreter::run_script(path)
 }

@@ -1,10 +1,12 @@
 mod lexer;
 mod tokens;
 mod parser;
+mod evaluate;
 
 use parser::Parser;
+use evaluate::evaluate_syntax_tree;
 use tokens::{TokenType, Function};
-use std::{error::Error, collections::HashMap, sync::LazyLock};
+use std::{error::Error, collections::HashMap, sync::LazyLock, io, io::BufRead, fs::File, path::Path};
 
 static KEYWORDS: LazyLock<HashMap<&str, TokenType>> = LazyLock::new(|| {
     let mut map = HashMap::new();
@@ -47,7 +49,13 @@ pub fn run_script(path: &str) -> Result<(), Box<dyn Error>> {
 
     let syntax_tree = Parser::new().create_syntax_tree(tokens)?;
 
-    println!("{:#?}", syntax_tree);
+    evaluate_syntax_tree(syntax_tree)?;
 
     Ok(())
+}
+
+fn read_lines<P>(file_path: P) -> io::Result<io::Lines<io::BufReader<File>>>
+where P: AsRef<Path> {
+    let file = File::open(file_path)?;
+    Ok(io::BufReader::new(file).lines())
 }
