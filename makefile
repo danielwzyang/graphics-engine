@@ -1,6 +1,6 @@
 RUN ?= WINIT_UNIX_BACKEND=x11 cargo run
-DEFAULT ?= scripts/test
-CUSTOM ?= scripts/dino
+DEFAULT ?= scripts/3dface.mdl
+CUSTOM ?= scripts/dino.mdl
 
 default:
 	${RUN} ${DEFAULT}
