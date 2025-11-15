@@ -7,7 +7,7 @@ use std::{
 };
 
 use crate::{
-    constants::{DEFAULT_BACKGROUND_COLOR, DEFAULT_FOREGROUND_COLOR, DEFAULT_PICTURE_DIMENSIONS, ShadingMode},
+    constants::{DEFAULT_BACKGROUND_COLOR, DEFAULT_FOREGROUND_COLOR, DEFAULT_LIGHTING_CONFIG, DEFAULT_PICTURE_DIMENSIONS, DEFAULT_REFLECTION_CONSTANTS, DEFAULT_SHADING_MODE, ShadingMode},
     matrix,
     render::{self, LightingConfig, Picture, ReflectionConstants},
 };
@@ -48,17 +48,9 @@ impl ScriptContext {
             edges: matrix::new(),
             polygons: matrix::new(),
             coordinate_stack: CoordinateStack::new(),
-            shading_mode: ShadingMode::Phong,
-            lighting_config: LightingConfig {
-                ambient_light_color: [50.0, 50.0, 50.0],
-                point_light_color: [255.0, 255.0, 255.0],
-                point_light_vector: [0.5, 0.75, 1.0],
-            },
-            reflection_constants: ReflectionConstants {
-                ambient: [0.1, 0.1, 0.1],
-                diffuse: [0.5, 0.5, 0.5],
-                specular: [0.5, 0.5, 0.5],
-            },
+            shading_mode: DEFAULT_SHADING_MODE,
+            lighting_config: DEFAULT_LIGHTING_CONFIG,
+            reflection_constants: DEFAULT_REFLECTION_CONSTANTS,
             symbols: HashMap::new(),
         }
     }

@@ -1,4 +1,5 @@
 #![allow(dead_code)]
+use crate::render::{LightingConfig, ReflectionConstants};
 
 /* CONFIG */
 pub const DEFAULT_SCRIPT: &str = "scripts/stonehenge.mdl";
@@ -9,6 +10,16 @@ pub const PARAMETRIC_STEPS: i32 = 100;
 pub const ENABLE_BACK_FACE_CULLING: bool = true;
 pub const ENABLE_SCAN_LINE_CONVERSION: bool = true;
 pub const ENABLE_Z_BUFFER: bool = true;
+pub const DEFAULT_LIGHTING_CONFIG: LightingConfig = LightingConfig {
+    ambient_light_color: [50.0, 50.0, 50.0],
+    point_light_color: [255.0, 255.0, 255.0],
+    point_light_vector: [0.5, 0.75, 1.0],
+};
+pub const DEFAULT_REFLECTION_CONSTANTS: ReflectionConstants = ReflectionConstants {
+    ambient: [0.1, 0.1, 0.1],
+    diffuse: [0.5, 0.5, 0.5],
+    specular: [0.5, 0.5, 0.5],
+};
 
 // only use gouraud and phong when there's no big flat surfaces e.g boxes
 // boxes will appear fuzzy since we're averaging vertex normals
@@ -19,7 +30,7 @@ pub enum ShadingMode {
     Gouraud,
     Phong,
 }
-pub const SHADING_MODE: ShadingMode = ShadingMode::Phong;
+pub const DEFAULT_SHADING_MODE: ShadingMode = ShadingMode::Flat;
 
 pub const SPECULAR_EXPONENT: f32 = 4.0;
 
