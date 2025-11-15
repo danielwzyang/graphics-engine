@@ -277,7 +277,7 @@ pub fn phong(
     let mut m = [p1[0], p1[1], p1[2]];
     let mut t = [p2[0], p2[1], p2[2]];
     
-    // as i said earlier, phong is different than gourand in that it interpolates by normals
+    // as i said earlier, phong is different than gouraud in that it interpolates by normals
     // here were don't calculate the color, we will do that at every pixel
     let mut n_b = normals[0];
     let mut n_m = normals[1];

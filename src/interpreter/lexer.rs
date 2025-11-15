@@ -1,12 +1,12 @@
 use std::{error::Error, io, io::BufRead, fs::File, path::Path};
 use super::tokens::{Token, TokenType};
 use regex::Regex;
-use std::collections::HashMap;
+use std::collections::{HashMap, VecDeque};
 
 // Regex patterns for different token types
 
-pub fn tokenize(path: &str, keywords: HashMap<&str, TokenType>) -> Result<Vec<Token>, Box<dyn Error>> {
-    let mut tokens: Vec<Token> = vec![];
+pub fn tokenize(path: &str, keywords: HashMap<&str, TokenType>) -> Result<VecDeque<Token>, Box<dyn Error>> {
+    let mut tokens: VecDeque<Token> = VecDeque::new();
 
     let number_regex = Regex::new(r"^-?(\d+\.?\d*|\.\d+)([eE][+-]?\d+)?$").unwrap();
     let identifier_regex = Regex::new(r"^[a-zA-Z_][a-zA-Z0-9_]*$").unwrap();
@@ -14,9 +14,9 @@ pub fn tokenize(path: &str, keywords: HashMap<&str, TokenType>) -> Result<Vec<To
 
     let lines = read_lines(path).map_err(|_| format!("'{}' not found", path))?;
 
-    let mut iterator = lines.map_while(Result::ok);
+    let mut iterator = lines.map_while(Result::ok).enumerate();
 
-    while let Some(line) = iterator.next() {
+    while let Some((line_number, line)) = iterator.next() {
         let line = line.trim();
 
         // ignore comments
@@ -30,7 +30,7 @@ pub fn tokenize(path: &str, keywords: HashMap<&str, TokenType>) -> Result<Vec<To
         for token in current {
             // keyword
             if let Some(token_type) = keywords.get(token) {
-                tokens.push(Token { 
+                tokens.push_back(Token { 
                     value: token.to_string(), 
                     token_type: token_type.clone() 
                 });
@@ -38,7 +38,7 @@ pub fn tokenize(path: &str, keywords: HashMap<&str, TokenType>) -> Result<Vec<To
             
             // number
             else if number_regex.is_match(token) {
-                tokens.push(Token {
+                tokens.push_back(Token {
                     value: token.to_string(),
                     token_type: TokenType::Number,
                 });
@@ -46,7 +46,7 @@ pub fn tokenize(path: &str, keywords: HashMap<&str, TokenType>) -> Result<Vec<To
             
             // file path
             else if file_path_regex.is_match(token) {
-                tokens.push(Token {
+                tokens.push_back(Token {
                     value: token.to_string(),
                     token_type: TokenType::FilePath,
                 });
@@ -54,15 +54,14 @@ pub fn tokenize(path: &str, keywords: HashMap<&str, TokenType>) -> Result<Vec<To
             
             // identifier
             else if identifier_regex.is_match(token) {
-                tokens.push(Token {
+                tokens.push_back(Token {
                     value: token.to_string(),
                     token_type: TokenType::Identifier,
                 });
             } 
             
-            // probably won't happen as identifier is basically a catch-all for our script
             else {
-                println!("Token not recognized: {}", token);
+                return Err(format!("{}:{} Token not recognized: {}", path, line_number + 1, token).into());
             }
         }
     }

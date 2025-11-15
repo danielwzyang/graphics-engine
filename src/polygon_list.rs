@@ -29,14 +29,14 @@ pub fn add_polygon(m: &mut PolygonList, x0: f32, y0: f32, z0: f32, x1: f32, y1: 
 }
 
 pub fn render_polygons(m: &PolygonList, picture: &mut Picture, color: &(usize, usize, usize)) {
-    // for gourand and phong shading
+    // for gouraud and phong shading
     // we need to keep a hash to get the average normal for every polygon that contains this vertex
     // instead of getting averages we can sum up all the vectors and then normalize it at the end
     // we need them to be normalized for lighting anyway
     let mut vertex_normals: HashMap<(usize, usize, usize), Vector> = HashMap::new();
 
     match SHADING_MODE {
-        ShadingMode::Gourand | ShadingMode::Phong => {
+        ShadingMode::Gouraud | ShadingMode::Phong => {
             for polygon in m.chunks(3) {
             let a = [
                 polygon[1][0] - polygon[0][0],
@@ -113,7 +113,7 @@ pub fn render_polygons(m: &PolygonList, picture: &mut Picture, color: &(usize, u
                             &get_illumination(&normalize_vector(&normal))
                         );
                     },
-                    ShadingMode::Gourand => {
+                    ShadingMode::Gouraud => {
                         let normals = [
                             *vertex_normals.get(&vector_to_key(&polygon[0])).unwrap(),
                             *vertex_normals.get(&vector_to_key(&polygon[1])).unwrap(),

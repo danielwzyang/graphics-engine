@@ -1,6 +1,8 @@
 mod lexer;
 mod tokens;
+mod parser;
 
+use parser::Parser;
 use tokens::{TokenType, Function};
 use std::{error::Error, collections::HashMap, sync::LazyLock};
 
@@ -32,18 +34,20 @@ static KEYWORDS: LazyLock<HashMap<&str, TokenType>> = LazyLock::new(|| {
     map.insert("torus", TokenType::Command(Function::Torus));
     map.insert("mesh", TokenType::Command(Function::Mesh));
 
-    map.insert("light", TokenType::Command(Function::Light));
-    map.insert("ambient", TokenType::Command(Function::Ambient));
-    map.insert("constants", TokenType::Command(Function::Constants));
-    map.insert("shading", TokenType::Command(Function::Shading));
+    map.insert("light", TokenType::Command(Function::SetLight));
+    map.insert("ambient", TokenType::Command(Function::SetAmbient));
+    map.insert("constants", TokenType::Command(Function::SetConstants));
+    map.insert("shading", TokenType::Command(Function::SetShading));
 
     map
 });
 
 pub fn run_script(path: &str) -> Result<(), Box<dyn Error>> {
-    let tokens = lexer::tokenize(path, KEYWORDS.clone());
+    let tokens = lexer::tokenize(path, KEYWORDS.clone())?;
 
-    println!("{:#?}", tokens);
+    let syntax_tree = Parser::new().create_syntax_tree(tokens)?;
+
+    println!("{:#?}", syntax_tree);
 
     Ok(())
 }

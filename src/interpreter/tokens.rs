@@ -4,7 +4,7 @@ pub struct Token {
     pub token_type: TokenType,
 }
 
-#[derive(Clone, Copy, Debug)]
+#[derive(Clone, Copy, Debug, PartialEq)]
 pub enum TokenType {
     Command(Function),
     AxisOfRotation,
@@ -13,7 +13,7 @@ pub enum TokenType {
     Identifier,
 }
 
-#[derive(Clone, Copy, Debug)]
+#[derive(Clone, Copy, Debug, PartialEq)]
 pub enum Function {
     Display,
     Save,
@@ -32,8 +32,8 @@ pub enum Function {
     Sphere,
     Torus,
     Mesh,
-    Light,
-    Ambient,
-    Constants,
-    Shading,
+    SetLight,
+    SetAmbient,
+    SetConstants,
+    SetShading,
 }

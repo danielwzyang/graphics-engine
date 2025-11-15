@@ -9,12 +9,13 @@ pub const ENABLE_BACK_FACE_CULLING: bool = true;
 pub const ENABLE_SCAN_LINE_CONVERSION: bool = true;
 pub const ENABLE_Z_BUFFER: bool = true;
 
-// only use gourand and phong when there's no big flat surfaces e.g boxes
+// only use gouraud and phong when there's no big flat surfaces e.g boxes
 // boxes will appear fuzzy since we're averaging vertex normals
 // flat looks fine if PARAMETRIC_STEPS is larger
+#[derive(Debug)]
 pub enum ShadingMode {
     Flat,
-    Gourand,
+    Gouraud,
     Phong,
 }
 pub const SHADING_MODE: ShadingMode = ShadingMode::Phong;
