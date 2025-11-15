@@ -1,24 +1,35 @@
 type Vector = [f32; 3];
 
-use crate::constants::{AMBIENT_LIGHT_COLOR, AMBIENT_REFLECTION, DIFFUSE_REFLECTION, POINT_LIGHT_COLOR, POINT_LIGHT_VECTOR, SPECULAR_EXPONENT, SPECULAR_REFLECTION};
+use crate::constants::SPECULAR_EXPONENT;
 
-pub fn get_illumination(normal: &Vector) -> (usize, usize, usize) {
+#[derive(Clone, Copy)]
+pub struct LightingConfig {
+    pub ambient_light_color: [f32; 3],
+    pub point_light_color: [f32; 3],
+    pub point_light_vector: [f32; 3],
+    pub ambient_reflection: [f32; 3],
+    pub diffuse_reflection: [f32; 3],
+    pub specular_reflection: [f32; 3],
+    // note: viewer vector is always <0, 0, 1> so all the math for backface culling and lighting is hardcoded
+}
+
+pub fn get_illumination(normal: &Vector, config: &LightingConfig) -> (usize, usize, usize) {
     let normal = &normalize_vector(&normal);
-    let point_light_vector = normalize_vector(&POINT_LIGHT_VECTOR);
+    let point_light_vector = normalize_vector(&config.point_light_vector);
 
     // i_ambient = ambient color * ambient reflection constant
     let ambient = [
-        AMBIENT_LIGHT_COLOR[0] * AMBIENT_REFLECTION[0],
-        AMBIENT_LIGHT_COLOR[1] * AMBIENT_REFLECTION[1],
-        AMBIENT_LIGHT_COLOR[2] * AMBIENT_REFLECTION[2],
+        config.ambient_light_color[0] * config.ambient_reflection[0],
+        config.ambient_light_color[1] * config.ambient_reflection[1],
+        config.ambient_light_color[2] * config.ambient_reflection[2],
     ];
 
     // i_diffuse = point color * diffuse reflection constant * (normalized normal dot normalized light)
     let n_dot_l = f32::max(0.0, dot_product(&normal, &point_light_vector));
     let diffuse = [
-        POINT_LIGHT_COLOR[0] * DIFFUSE_REFLECTION[0] * n_dot_l,
-        POINT_LIGHT_COLOR[1] * DIFFUSE_REFLECTION[1] * n_dot_l,
-        POINT_LIGHT_COLOR[2] * DIFFUSE_REFLECTION[2] * n_dot_l,
+        config.point_light_color[0] * config.diffuse_reflection[0] * n_dot_l,
+        config.point_light_color[1] * config.diffuse_reflection[1] * n_dot_l,
+        config.point_light_color[2] * config.diffuse_reflection[2] * n_dot_l,
     ];
 
     // i_specular = point color * specular reflection constant * (normalized reflection dot view)^exp
@@ -30,9 +41,9 @@ pub fn get_illumination(normal: &Vector) -> (usize, usize, usize) {
     let r_z = f32::max(0.0, 2.0 * normal[2] * n_dot_l - point_light_vector[2]).powf(SPECULAR_EXPONENT);
 
     let specular = [
-        POINT_LIGHT_COLOR[0] * SPECULAR_REFLECTION[0] * r_z,
-        POINT_LIGHT_COLOR[1] * SPECULAR_REFLECTION[1] * r_z,
-        POINT_LIGHT_COLOR[2] * SPECULAR_REFLECTION[2] * r_z,
+        config.point_light_color[0] * config.specular_reflection[0] * r_z,
+        config.point_light_color[1] * config.specular_reflection[1] * r_z,
+        config.point_light_color[2] * config.specular_reflection[2] * r_z,
     ];
 
     clamp_color([

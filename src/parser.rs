@@ -1,3 +1,5 @@
+use crate::constants::ShadingMode;
+use crate::lighting::LightingConfig;
 use crate::{matrix, constants};
 use crate::coordinate_stack::CoordinateStack;
 use crate::picture::Picture;
@@ -12,6 +14,8 @@ struct ScriptContext {
     edges: Matrix,
     polygons: Matrix,
     coordinate_stack: CoordinateStack,
+    shading_mode: ShadingMode,
+    lighting_config: LightingConfig,
 }
 
 impl ScriptContext {
@@ -23,6 +27,15 @@ impl ScriptContext {
             edges: matrix::new(),
             polygons: matrix::new(),
             coordinate_stack: CoordinateStack::new(),
+            shading_mode: ShadingMode::Gouraud,
+            lighting_config: LightingConfig {
+                ambient_light_color: [255.0, 255.0, 255.0],
+                point_light_color: [255.0, 255.0, 255.0],
+                point_light_vector: [1.0, 0.5, 1.0],
+                ambient_reflection: [0.1, 0.1, 0.1],
+                diffuse_reflection: [0.5, 0.5, 0.5],
+                specular_reflection: [0.5, 0.5, 0.5],
+            }
         }
     }
 
@@ -34,7 +47,7 @@ impl ScriptContext {
 
     fn render_polygons(&mut self, color: &(usize, usize, usize)) {
         matrix::multiply(&self.coordinate_stack.peek(), &mut self.polygons);
-        render_polygons(&self.polygons, &mut self.picture, color);
+        render_polygons(&self.polygons, &mut self.picture, color, &self.shading_mode, &self.lighting_config);
         self.polygons = matrix::new();
     }
 }
