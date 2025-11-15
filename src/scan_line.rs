@@ -146,9 +146,9 @@ pub fn gouraud(
         std::mem::swap(&mut color_b, &mut color_m);
     }
     
-    let y_start = b[1] as usize;
-    let y_mid = m[1] as usize;
-    let y_end = t[1] as usize;
+    let y_start = b[1] as isize;
+    let y_mid = m[1] as isize;
+    let y_end = t[1] as isize;
 
     let distance0 = (y_end - y_start) as f32 + 1.0;
     let distance1 = (y_mid - y_start) as f32 + 1.0;
@@ -201,8 +201,8 @@ pub fn gouraud(
         }
         
         // we want to draw our horizontal lines but we can't use draw_line because every pixel in the line is different
-        let mut x_start = x0 as usize;
-        let mut x_end = x1 as usize;
+        let mut x_start = x0 as isize;
+        let mut x_end = x1 as isize;
         let mut z_start = z0;
         let mut z_end = z1;
         let mut cr_start = r0;
@@ -300,9 +300,9 @@ pub fn phong(
         std::mem::swap(&mut n_b, &mut n_m);
     }
     
-    let y_start = b[1] as usize;
-    let y_mid = m[1] as usize;
-    let y_end = t[1] as usize;
+    let y_start = b[1] as isize;
+    let y_mid = m[1] as isize;
+    let y_end = t[1] as isize;
     let distance0 = (y_end - y_start) as f32 + 1.0;
     let distance1 = (y_mid - y_start) as f32 + 1.0;
     let distance2 = (y_end - y_mid) as f32 + 1.0;
@@ -354,8 +354,8 @@ pub fn phong(
         }
         
         // once again draw our horizontal lines: same procedure
-        let mut x_start = x0 as usize;
-        let mut x_end = x1 as usize;
+        let mut x_start = x0 as isize;
+        let mut x_end = x1 as isize;
         let mut z_start = z0;
         let mut z_end = z1;
         let mut nx_start = nx0;

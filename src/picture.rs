@@ -137,20 +137,23 @@ impl Picture {
         Ok(())
     }
 
-    pub fn plot(&mut self, x: usize, y: usize, z: f32, color: &(usize, usize, usize)) {
-        // ignore pixels out of bounds
-        if y >= self.yres || x >= self.xres {
+    pub fn plot(&mut self, x: isize, y: isize, z: f32, color: &(usize, usize, usize)) {
+        // ignore pixels out of bounds (check for negative first!)
+        if x < 0 || y < 0 || x >= self.xres as isize || y >= self.yres as isize {
             return;
         }
 
+        let x = x as usize;
+        let y = y as usize;
+        
+        // flip the y coords so the origin is at the bottom left instead of top left
         let y = (self.yres - 1) - y;
 
         // z buffer
-        if z < self.z_buffer[y][x]  && ENABLE_Z_BUFFER {
+        if z < self.z_buffer[y][x] && ENABLE_Z_BUFFER {
             return;
         }
 
-        // flip the y coords so the origin is at the bottom left instead of top left
         self.data[y][x] = (color.0, color.1, color.2);
         self.z_buffer[y][x] = z;
     }
@@ -185,7 +188,7 @@ impl Picture {
 
             // there is at least one pixel for every x value for small slope
             loop {
-                self.plot(x0 as usize, y0 as usize, z0, &color);
+                self.plot(x0, y0, z0, &color);
 
                 if x0 == x1 {
                     break;
@@ -211,7 +214,7 @@ impl Picture {
 
             // there is at least one pixel for every y value for big slope
             loop {
-                self.plot(x0 as usize, y0 as usize, z0, &color);
+                self.plot(x0, y0, z0, &color);
 
                 if y0 == y1 {
                     break;
@@ -233,6 +236,6 @@ impl Picture {
         }
 
         // plot last point
-        self.plot(x0 as usize, y0 as usize, z0, &color);
+        self.plot(x0, y0, z0, &color);
     }
 }

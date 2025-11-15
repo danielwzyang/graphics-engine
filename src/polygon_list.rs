@@ -9,8 +9,8 @@ use crate::matrix::add_point;
 use crate::lighting::{LightingConfig, ReflectionConstants, get_illumination};
 use crate::scan_line;
 
-fn vector_to_key(vector: &[f32; 4]) -> (usize, usize, usize) {
-    (vector[0] as usize, vector[1] as usize, vector[2] as usize)
+fn vector_to_key(vector: &[f32; 4]) -> (isize, isize, isize) {
+    (vector[0].round() as isize, vector[1].round() as isize, vector[2].round() as isize)
 }
 
 fn add_vectors(a: &Vector, b: &Vector) -> Vector {
@@ -36,7 +36,7 @@ pub fn render_polygons(
     // we need to keep a hash to get the average normal for every polygon that contains this vertex
     // instead of getting averages we can sum up all the vectors and then normalize it at the end
     // we need them to be normalized for lighting anyway
-    let mut vertex_normals: HashMap<(usize, usize, usize), Vector> = HashMap::new();
+    let mut vertex_normals: HashMap<(isize, isize, isize), Vector> = HashMap::new();
 
     match shading_mode {
         ShadingMode::Gouraud | ShadingMode::Phong => {

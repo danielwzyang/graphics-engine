@@ -42,7 +42,7 @@ impl ScriptContext {
             edges: matrix::new(),
             polygons: matrix::new(),
             coordinate_stack: CoordinateStack::new(),
-            shading_mode: ShadingMode::Flat,
+            shading_mode: ShadingMode::Phong,
             lighting_config: LightingConfig {
                 ambient_light_color: [50.0, 50.0, 50.0],
                 point_light_color: [255.0, 255.0, 255.0],
