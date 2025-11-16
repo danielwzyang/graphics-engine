@@ -13,9 +13,9 @@ rotate
 z 50
 
 mesh
-meshes/stonehenge_ascii.stl
+meshes/stonehenge.stl
 
 save
-better_stonehenge.png
+stonehenge.png
 
 display

@@ -4,7 +4,10 @@ use std::{
     collections::HashMap,
     error::Error,
     path::Path,
+    fs::OpenOptions,
 };
+
+use stl_io::read_stl;
 
 use crate::{
     constants::{DEFAULT_BACKGROUND_COLOR, DEFAULT_FOREGROUND_COLOR, DEFAULT_LIGHTING_CONFIG, DEFAULT_PICTURE_DIMENSIONS, DEFAULT_REFLECTION_CONSTANTS, DEFAULT_SHADING_MODE, ShadingMode},
@@ -194,9 +197,13 @@ fn handle_mesh(
     constants: &Option<String>,
     path: String,
 ) -> Result<(), Box<dyn Error>> {
-    let lines = read_lines(&path).map_err(|_| format!("Mesh file '{}' not found", path))?;
+    let file = Path::new(&path);
 
-    let extension = Path::new(&path)
+    if !file.exists() {
+        return Err(format!("Mesh file '{}' not found", path).into());
+    }
+
+    let extension = file
         .extension()
         .and_then(|s| s.to_str())
         .unwrap_or("")
@@ -206,34 +213,38 @@ fn handle_mesh(
         return Err(format!("Mesh file extension '.{}' not supported", path).into());
     }
 
-    let mut vertices: Vec<[f32; 3]> = vec![];
-    for line in lines.map_while(Result::ok) {
-        let line = line.trim();
-        let parts: Vec<&str> = line.split_whitespace().collect();
+    if extension == "obj" {
+        let mut vertices: Vec<[f32; 3]> = vec![];
+        for line in read_lines(&path)?.map_while(Result::ok) {
+            let line = line.trim();
+            let parts: Vec<&str> = line.split_whitespace().collect();
 
-        if line.starts_with("v ") || line.starts_with("vertex ") {
-            vertices.push([parts[1].parse::<f32>()?, parts[2].parse::<f32>()?, parts[3].parse::<f32>()?]);
-        } else if line.starts_with("f ") {
-            let a = parts[1].parse::<usize>()? - 1;
-            let b = parts[2].parse::<usize>()? - 1;
-            let c = parts[3].parse::<usize>()? - 1;
+            if line.starts_with("v ") {
+                vertices.push([parts[1].parse::<f32>()?, parts[2].parse::<f32>()?, parts[3].parse::<f32>()?]);
+            } else if line.starts_with("f ") {
+                let a = parts[1].parse::<usize>()? - 1;
+                let b = parts[2].parse::<usize>()? - 1;
+                let c = parts[3].parse::<usize>()? - 1;
 
-            add_polygon(
-                &mut context.polygons,
-                vertices[a][0], vertices[a][1], vertices[a][2],
-                vertices[b][0], vertices[b][1], vertices[b][2],
-                vertices[c][0], vertices[c][1], vertices[c][2],
-            );
+                add_polygon(
+                    &mut context.polygons,
+                    vertices[a][0], vertices[a][1], vertices[a][2],
+                    vertices[b][0], vertices[b][1], vertices[b][2],
+                    vertices[c][0], vertices[c][1], vertices[c][2],
+                );
+            }
         }
-    }
+    } else {
+        // i originally had this hand parsed using ascii along with the .obj, but i wanted more flexibility and binary stls are annoying to parse
+        let mut file = OpenOptions::new().read(true).open(path).unwrap();
+        let mesh = read_stl(&mut file)?;
 
-    if extension == "stl" {
-        for polygon in vertices.chunks(3) {
+        for polygon in mesh.into_triangle_vec() {
             add_polygon(
                 &mut context.polygons,
-                polygon[0][0], polygon[0][1], polygon[0][2],
-                polygon[1][0], polygon[1][1], polygon[1][2],
-                polygon[2][0], polygon[2][1], polygon[2][2],
+                polygon.vertices[0][0], polygon.vertices[0][1], polygon.vertices[0][2],
+                polygon.vertices[1][0], polygon.vertices[1][1], polygon.vertices[1][2],
+                polygon.vertices[2][0], polygon.vertices[2][1], polygon.vertices[2][2],
             );
         }
     }
