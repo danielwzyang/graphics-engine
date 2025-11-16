@@ -3,6 +3,7 @@ mod matrix;
 mod picture;
 mod render;
 mod interpreter;
+mod vector;
 
 use std::{error::Error, env};
 #[show_image::main]

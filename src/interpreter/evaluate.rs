@@ -1,10 +1,7 @@
 #![allow(dead_code)]
 
 use std::{
-    collections::HashMap,
-    error::Error,
-    path::Path,
-    fs::OpenOptions,
+    collections::HashMap, error::Error, fs::OpenOptions, path::Path, vec
 };
 
 use stl_io::read_stl;
@@ -12,7 +9,8 @@ use stl_io::read_stl;
 use crate::{
     constants::{DEFAULT_BACKGROUND_COLOR, DEFAULT_FOREGROUND_COLOR, DEFAULT_LIGHTING_CONFIG, DEFAULT_PICTURE_DIMENSIONS, DEFAULT_REFLECTION_CONSTANTS, DEFAULT_SHADING_MODE, ShadingMode},
     matrix,
-    render::{self, LightingConfig, Picture, ReflectionConstants},
+    render::{self, LightingConfig, Picture, ReflectionConstants}, 
+    vector::{cross_product, dot_product, normalize_vector, subtract_vectors},
 };
 use super::{
     coordinate_stack::CoordinateStack,
@@ -39,6 +37,7 @@ struct ScriptContext {
     shading_mode: ShadingMode,
     lighting_config: LightingConfig,
     reflection_constants: ReflectionConstants,
+    camera_matrix: Matrix,
     symbols: HashMap<String, Symbol>,
 }
 
@@ -54,6 +53,7 @@ impl ScriptContext {
             shading_mode: DEFAULT_SHADING_MODE,
             lighting_config: DEFAULT_LIGHTING_CONFIG,
             reflection_constants: DEFAULT_REFLECTION_CONSTANTS,
+            camera_matrix: matrix::identity(),
             symbols: HashMap::new(),
         }
     }
@@ -74,7 +74,9 @@ impl ScriptContext {
             }
         }
         
-        crate::matrix::multiply(&self.coordinate_stack.peek(), &mut self.polygons);
+        matrix::multiply(&self.coordinate_stack.peek(), &mut self.polygons);
+        matrix::multiply(&self.camera_matrix, &mut self.polygons);
+
         render_polygons(&self.polygons, &mut self.picture, &DEFAULT_FOREGROUND_COLOR, &self.shading_mode, &self.lighting_config, reflection_constants);
         self.polygons = matrix::new();
 
@@ -160,7 +162,7 @@ pub fn evaluate_syntax_tree(syntax_tree: Vec<Command>) -> Result<(), Box<dyn Err
             }
 
             Command::Mesh { constants, file_path } => {
-                handle_mesh(&mut context, &constants, file_path)?;
+                handle_mesh(&mut context, file_path)?;
                 context.render_polygons(&constants)?;
             }
 
@@ -186,6 +188,27 @@ pub fn evaluate_syntax_tree(syntax_tree: Vec<Command>) -> Result<(), Box<dyn Err
             Command::SetShading { shading_mode } => {
                 context.shading_mode = shading_mode.clone();
             }
+
+            Command::SetCamera { eye_x, eye_y, eye_z, aim_x, aim_y, aim_z } => {
+                let eye = [eye_x, eye_y, eye_z];
+                let aim = [aim_x, aim_y, aim_z];
+                let forward = normalize_vector(&subtract_vectors(&aim, &eye));
+                let up = [0.0, 1.0, 0.0];
+
+                let right = normalize_vector(&cross_product(&forward, &up));
+                let up_new = cross_product(&right, &forward);
+
+                let ex = -dot_product(&right, &eye);
+                let ey = -dot_product(&up_new, &eye);
+                let ez =  dot_product(&forward, &eye);
+
+                context.camera_matrix = vec![
+                    [ right[0], right[1], right[2], 0.0 ],
+                    [ up_new[0], up_new[1], up_new[2], 0.0 ],
+                    [ -forward[0], -forward[1], -forward[2], 0.0 ],
+                    [ ex, ey, ez, 1.0 ],
+                ];
+            }
         }
     }
 
@@ -194,7 +217,6 @@ pub fn evaluate_syntax_tree(syntax_tree: Vec<Command>) -> Result<(), Box<dyn Err
 
 fn handle_mesh(
     context: &mut ScriptContext,
-    constants: &Option<String>,
     path: String,
 ) -> Result<(), Box<dyn Error>> {
     let file = Path::new(&path);
@@ -249,6 +271,5 @@ fn handle_mesh(
         }
     }
 
-    context.render_polygons(constants)?;
     Ok(())
 }

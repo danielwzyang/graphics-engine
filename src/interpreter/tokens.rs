@@ -36,4 +36,5 @@ pub enum Function {
     SetAmbient,
     SetConstants,
     SetShading,
+    SetCamera,
 }

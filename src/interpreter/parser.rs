@@ -35,6 +35,7 @@ pub enum Command {
     SetAmbient { r: f32, g: f32, b: f32 },
     SetConstants { name: String, kar: f32, kdr: f32, ksr: f32, kag: f32, kdg: f32, ksg: f32, kab: f32, kdb: f32, ksb: f32 },
     SetShading { shading_mode: ShadingMode },
+    SetCamera { eye_x: f32, eye_y: f32, eye_z: f32, aim_x: f32, aim_y: f32, aim_z: f32 }
 }
 
 pub struct Parser {
@@ -73,29 +74,32 @@ impl Parser {
 
             match token.token_type {
                 TokenType::Command(function) => {
-                    match function {
-                        Function::Display => { commands.push(Command::Display) }
-                        Function::Save => { commands.push(self.handle_save()?) }
-                        Function::Clear => { commands.push(Command::Clear) }
-                        Function::Push => { commands.push(Command::Push) }
-                        Function::Pop => { commands.push(Command::Pop) }
-                        Function::Move => { commands.push(self.handle_move()?) }
-                        Function::Scale => { commands.push(self.handle_scale()?) }
-                        Function::Rotate => { commands.push(self.handle_rotate()?) }
-                        Function::Line => { commands.push(self.handle_line()?) }
-                        Function::Circle => { commands.push(self.handle_circle()?) }
-                        Function::Hermite => { commands.push(self.handle_hermite()?) }
-                        Function::Bezier => { commands.push(self.handle_bezier()?) }
-                        Function::Polygon => { commands.push(self.handle_polygon()?) }
-                        Function::Box => { commands.push(self.handle_box()?) }
-                        Function::Sphere => { commands.push(self.handle_sphere()?) }
-                        Function::Torus => { commands.push(self.handle_torus()?) }
-                        Function::Mesh => { commands.push(self.handle_mesh()?) }
-                        Function::SetLight => { commands.push(self.handle_set_light()?) }
-                        Function::SetAmbient => { commands.push(self.handle_set_ambient()?) }
-                        Function::SetConstants => { commands.push(self.handle_set_constants()?) }
-                        Function::SetShading => { commands.push(self.handle_set_shading()?) }
-                    }
+                    commands.push(
+                        match function {
+                            Function::Display => { Command::Display }
+                            Function::Save => { self.handle_save()? }
+                            Function::Clear => { Command::Clear }
+                            Function::Push => { Command::Push }
+                            Function::Pop => { Command::Pop }
+                            Function::Move => { self.handle_move()? }
+                            Function::Scale => { self.handle_scale()? }
+                            Function::Rotate => { self.handle_rotate()? }
+                            Function::Line => { self.handle_line()? }
+                            Function::Circle => { self.handle_circle()? }
+                            Function::Hermite => { self.handle_hermite()? }
+                            Function::Bezier => { self.handle_bezier()? }
+                            Function::Polygon => { self.handle_polygon()? }
+                            Function::Box => { self.handle_box()? }
+                            Function::Sphere => { self.handle_sphere()? }
+                            Function::Torus => { self.handle_torus()? }
+                            Function::Mesh => { self.handle_mesh()? }
+                            Function::SetLight => { self.handle_set_light()? }
+                            Function::SetAmbient => { self.handle_set_ambient()? }
+                            Function::SetConstants => { self.handle_set_constants()? }
+                            Function::SetShading => { self.handle_set_shading()? }
+                            Function::SetCamera => { self.handle_set_camera()? }
+                        }
+                    )
                 }
 
                 _ => {
@@ -289,6 +293,17 @@ impl Parser {
         };
 
         Ok(Command::SetShading { shading_mode })
+    }
+
+    fn handle_set_camera(&mut self) -> Result<Command, Box<dyn Error>> {
+        let eye_x = Parser::convert_parameter(self.pop()?.value)?;
+        let eye_y = Parser::convert_parameter(self.pop()?.value)?;
+        let eye_z = Parser::convert_parameter(self.pop()?.value)?;
+        let aim_x = Parser::convert_parameter(self.pop()?.value)?;
+        let aim_y = Parser::convert_parameter(self.pop()?.value)?;
+        let aim_z = Parser::convert_parameter(self.pop()?.value)?;
+
+        Ok(Command::SetCamera { eye_x, eye_y, eye_z, aim_x, aim_y, aim_z })
     }
 
     fn convert_parameter(parameter: String) -> Result<f32, Box<dyn Error>> {

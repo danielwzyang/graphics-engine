@@ -9,6 +9,7 @@ use std::{
 use crate::{
     constants::{CUBE, ENABLE_BACK_FACE_CULLING, ENABLE_SCAN_LINE_CONVERSION, PARAMETRIC_STEPS, ShadingMode},
     matrix::add_point,
+    vector::{add_vectors, cross_product, normalize_vector}
 };
 use super::{
     scan_line,
@@ -17,15 +18,6 @@ use super::{
 
 fn vector_to_key(vector: &[f32; 4]) -> (isize, isize, isize) {
     (vector[0].round() as isize, vector[1].round() as isize, vector[2].round() as isize)
-}
-
-fn add_vectors(a: &Vector, b: &Vector) -> Vector {
-    [a[0] + b[0], a[1] + b[1], a[2] + b[2]]
-}
-
-fn normalize_vector(vector: &Vector) -> Vector {
-    let magnitude = (vector[0] * vector[0] + vector[1] * vector[1] + vector[2] * vector[2]).sqrt();
-    [vector[0] / magnitude, vector[1] / magnitude, vector[2] / magnitude]
 }
 
 pub fn add_polygon(m: &mut PolygonList, x0: f32, y0: f32, z0: f32, x1: f32, y1: f32, z1: f32, x2: f32, y2: f32, z2: f32) {
@@ -60,12 +52,7 @@ pub fn render_polygons(
             ];
 
             // calculate the normal for backface culling using the cross product of two edges
-            // normal = < aybz - azby, azbx - axbz, axby - aybx >
-            let normal: Vector = [
-                a[1] * b[2] - a[2] * b[1],
-                a[2] * b[0] - a[0] * b[2],
-                a[0] * b[1] - a[1] * b[0],
-            ];
+            let normal = cross_product(&a, &b);
 
             for vertex in polygon {
                 let entry = vertex_normals.entry(vector_to_key(&vertex)).or_insert([0.0, 0.0, 0.0]);

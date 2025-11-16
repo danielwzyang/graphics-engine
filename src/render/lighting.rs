@@ -1,6 +1,9 @@
 type Vector = [f32; 3];
 
-use crate::constants::SPECULAR_EXPONENT;
+use crate::{
+    constants::SPECULAR_EXPONENT,
+    vector::{normalize_vector, dot_product}
+};
 
 #[derive(Clone, Copy)]
 pub struct LightingConfig {
@@ -55,15 +58,6 @@ pub fn get_illumination(normal: &Vector, config: &LightingConfig, constants: &Re
         ambient[1] + diffuse[1] + specular[1],
         ambient[2] + diffuse[2] + specular[2],
     ])
-}
-
-fn dot_product(a: &Vector, b: &Vector) -> f32 {
-    a[0] * b[0] + a[1] * b[1] + a[2] * b[2]
-}
-
-fn normalize_vector(vector: &Vector) -> Vector {
-    let magnitude = (vector[0] * vector[0] + vector[1] * vector[1] + vector[2] * vector[2]).sqrt();
-    [vector[0] / magnitude, vector[1] / magnitude, vector[2] / magnitude]
 }
 
 fn clamp_color(vector: Vector) -> (usize, usize, usize) {
