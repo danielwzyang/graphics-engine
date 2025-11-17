@@ -1,0 +1,17 @@
+# https://www.thingiverse.com/thing:5362238
+
+frames 50
+basename stonehenge_anim
+
+push
+move 250 220 0
+rotate
+x -50
+scale 4 4 4
+
+rotate
+z 360 spin
+
+mesh meshes/stonehenge.stl
+
+vary spin 0 49 0 1
