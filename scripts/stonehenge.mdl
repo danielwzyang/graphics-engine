@@ -1,6 +1,6 @@
 # https://www.thingiverse.com/thing:5362238
 
-camera -250 -250 0 -250 -250 -300
+camera -250 0 300 -250 -300 0
 
 push
 scale 4 4 4

@@ -7,7 +7,7 @@ use std::{
 };
 
 use crate::{
-    constants::{CUBE, ENABLE_BACK_FACE_CULLING, ENABLE_SCAN_LINE_CONVERSION, PARAMETRIC_STEPS, ShadingMode},
+    constants::{CUBE, ENABLE_BACK_FACE_CULLING, PARAMETRIC_STEPS, ShadingMode},
     matrix::add_point,
     vector::{add_vectors, cross_product, normalize_vector}
 };
@@ -100,50 +100,49 @@ pub fn render_polygons(
         */
 
         if normal[2] > 0.0 && ENABLE_BACK_FACE_CULLING {
-            if ENABLE_SCAN_LINE_CONVERSION {
-                match shading_mode {
-                    ShadingMode::Flat => {
-                        scan_line::flat(
-                            picture, 
-                            polygon,
-                            &get_illumination(&normalize_vector(&normal), lighting_config, reflection_constants)
-                        );
-                    },
-                    ShadingMode::Gouraud => {
-                        let normals = [
-                            *vertex_normals.get(&vector_to_key(&polygon[0])).unwrap(),
-                            *vertex_normals.get(&vector_to_key(&polygon[1])).unwrap(),
-                            *vertex_normals.get(&vector_to_key(&polygon[2])).unwrap(),
-                        ];
-
-                        scan_line::gouraud(picture, polygon, normals, lighting_config, reflection_constants);
-                    }
-                    ShadingMode::Phong => {
-                        let normals = [
-                            *vertex_normals.get(&vector_to_key(&polygon[0])).unwrap(),
-                            *vertex_normals.get(&vector_to_key(&polygon[1])).unwrap(),
-                            *vertex_normals.get(&vector_to_key(&polygon[2])).unwrap(),
-                        ];
-
-                        scan_line::phong(picture, polygon, normals, lighting_config, reflection_constants);
-                    }
+            match shading_mode {
+                ShadingMode::Wireframe => {
+                    picture.draw_line(
+                        polygon[0][0] as isize, polygon[0][1] as isize, polygon[0][2],
+                        polygon[1][0] as isize, polygon[1][1] as isize, polygon[1][2],
+                        &color,
+                    );
+                    picture.draw_line(
+                        polygon[2][0] as isize, polygon[2][1] as isize, polygon[2][2],
+                        polygon[1][0] as isize, polygon[1][1] as isize, polygon[1][2],
+                        &color,
+                    );
+                    picture.draw_line(
+                        polygon[0][0] as isize, polygon[0][1] as isize, polygon[0][2],
+                        polygon[2][0] as isize, polygon[2][1] as isize, polygon[2][2],
+                        &color,
+                    );
                 }
-            } else {
-                picture.draw_line(
-                    polygon[0][0] as isize, polygon[0][1] as isize, polygon[0][2],
-                    polygon[1][0] as isize, polygon[1][1] as isize, polygon[1][2],
-                    &color,
-                );
-                picture.draw_line(
-                    polygon[2][0] as isize, polygon[2][1] as isize, polygon[2][2],
-                    polygon[1][0] as isize, polygon[1][1] as isize, polygon[1][2],
-                    &color,
-                );
-                picture.draw_line(
-                    polygon[0][0] as isize, polygon[0][1] as isize, polygon[0][2],
-                    polygon[2][0] as isize, polygon[2][1] as isize, polygon[2][2],
-                    &color,
-                );
+                ShadingMode::Flat => {
+                    scan_line::flat(
+                        picture, 
+                        polygon,
+                        &get_illumination(&normalize_vector(&normal), lighting_config, reflection_constants)
+                    );
+                },
+                ShadingMode::Gouraud => {
+                    let normals = [
+                        *vertex_normals.get(&vector_to_key(&polygon[0])).unwrap(),
+                        *vertex_normals.get(&vector_to_key(&polygon[1])).unwrap(),
+                        *vertex_normals.get(&vector_to_key(&polygon[2])).unwrap(),
+                    ];
+
+                    scan_line::gouraud(picture, polygon, normals, lighting_config, reflection_constants);
+                }
+                ShadingMode::Phong => {
+                    let normals = [
+                        *vertex_normals.get(&vector_to_key(&polygon[0])).unwrap(),
+                        *vertex_normals.get(&vector_to_key(&polygon[1])).unwrap(),
+                        *vertex_normals.get(&vector_to_key(&polygon[2])).unwrap(),
+                    ];
+
+                    scan_line::phong(picture, polygon, normals, lighting_config, reflection_constants);
+                }
             }
         }
     }

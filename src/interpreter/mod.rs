@@ -1,8 +1,9 @@
 mod lexer;
 mod tokens;
 mod parser;
-mod evaluate;
-pub mod coordinate_stack;
+mod run_script;
+mod animation;
+mod coordinate_stack;
 
 use std::{
     error::Error,
@@ -14,7 +15,7 @@ use std::{
 };
 
 use parser::Parser;
-use evaluate::evaluate_syntax_tree;
+use run_script::evaluate_commands;
 use tokens::{TokenType, Function};
 
 static KEYWORDS: LazyLock<HashMap<&str, TokenType>> = LazyLock::new(|| {
@@ -23,6 +24,7 @@ static KEYWORDS: LazyLock<HashMap<&str, TokenType>> = LazyLock::new(|| {
     map.insert("display", TokenType::Command(Function::Display));
     map.insert("save", TokenType::Command(Function::Save));
     map.insert("clear", TokenType::Command(Function::Clear));
+    map.insert("camera", TokenType::Command(Function::SetCamera));
 
     map.insert("push", TokenType::Command(Function::Push));
     map.insert("pop", TokenType::Command(Function::Pop));
@@ -50,7 +52,13 @@ static KEYWORDS: LazyLock<HashMap<&str, TokenType>> = LazyLock::new(|| {
     map.insert("constants", TokenType::Command(Function::SetConstants));
     map.insert("shading", TokenType::Command(Function::SetShading));
 
-    map.insert("camera", TokenType::Command(Function::SetCamera));
+    map.insert("basename", TokenType::Command(Function::SetBaseName));
+    map.insert("set", TokenType::Command(Function::SetKnob));
+    map.insert("save_knobs", TokenType::Command(Function::SaveKnobList));
+    map.insert("tween", TokenType::Command(Function::Tween));
+    map.insert("frames", TokenType::Command(Function::SetFrames));
+    map.insert("vary", TokenType::Command(Function::VaryKnob));
+    map.insert("setknobs", TokenType::Command(Function::SetAllKnobs));
 
     map
 });
@@ -58,9 +66,9 @@ static KEYWORDS: LazyLock<HashMap<&str, TokenType>> = LazyLock::new(|| {
 pub fn run_script(path: &str) -> Result<(), Box<dyn Error>> {
     let tokens = lexer::tokenize(path, KEYWORDS.clone())?;
 
-    let syntax_tree = Parser::new().create_syntax_tree(tokens)?;
+    let commands = Parser::new().generate_command_list(tokens)?;
 
-    evaluate_syntax_tree(syntax_tree)?;
+    evaluate_commands(commands)?;
 
     Ok(())
 }

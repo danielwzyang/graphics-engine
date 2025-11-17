@@ -8,7 +8,6 @@ pub const DEFAULT_BACKGROUND_COLOR: (usize, usize, usize) = WHITE;
 pub const DEFAULT_FOREGROUND_COLOR: (usize, usize, usize) = BLUE;
 pub const PARAMETRIC_STEPS: i32 = 100;
 pub const ENABLE_BACK_FACE_CULLING: bool = true;
-pub const ENABLE_SCAN_LINE_CONVERSION: bool = true;
 pub const ENABLE_Z_BUFFER: bool = true;
 pub const DEFAULT_LIGHTING_CONFIG: LightingConfig = LightingConfig {
     ambient_light_color: [50.0, 50.0, 50.0],
@@ -26,6 +25,7 @@ pub const DEFAULT_REFLECTION_CONSTANTS: ReflectionConstants = ReflectionConstant
 // flat looks fine if PARAMETRIC_STEPS is larger
 #[derive(Clone, Copy, Debug)]
 pub enum ShadingMode {
+    Wireframe,
     Flat,
     Gouraud,
     Phong,

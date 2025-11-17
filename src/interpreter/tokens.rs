@@ -15,26 +15,44 @@ pub enum TokenType {
 
 #[derive(Clone, Copy, Debug, PartialEq)]
 pub enum Function {
+    // GENERAL
     Display,
     Save,
     Clear,
+    SetCamera,
+
+    // TRANSFORMATIONS
     Push,
     Pop,
     Move,
     Scale,
     Rotate,
+
+    // EDGES
     Line,
     Circle,
     Hermite,
     Bezier,
+
+    // POLYGONS
     Polygon,
     Box,
     Sphere,
     Torus,
     Mesh,
+
+    // LIGHTING
     SetLight,
     SetAmbient,
     SetConstants,
     SetShading,
-    SetCamera,
+
+    // ANIMATION
+    SetBaseName,
+    SetKnob,
+    SaveKnobList,
+    Tween,
+    SetFrames,
+    VaryKnob,
+    SetAllKnobs,
 }

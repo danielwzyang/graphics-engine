@@ -1,8 +1,7 @@
 #![allow(dead_code)]
 
 use std::{
-    error::Error,
-    collections::VecDeque,
+    collections::VecDeque, error::Error
 };
 
 use crate::{
@@ -12,7 +11,7 @@ use crate::{
 use super::tokens::{Token, TokenType, Function};
 
 // file paths +  identifiers stored as String
-#[derive(Debug)]
+#[derive(Clone, Debug)]
 pub enum Command {
     Display,
     Save { file_path: String },
@@ -35,7 +34,14 @@ pub enum Command {
     SetAmbient { r: f32, g: f32, b: f32 },
     SetConstants { name: String, kar: f32, kdr: f32, ksr: f32, kag: f32, kdg: f32, ksg: f32, kab: f32, kdb: f32, ksb: f32 },
     SetShading { shading_mode: ShadingMode },
-    SetCamera { eye_x: f32, eye_y: f32, eye_z: f32, aim_x: f32, aim_y: f32, aim_z: f32 }
+    SetCamera { eye_x: f32, eye_y: f32, eye_z: f32, aim_x: f32, aim_y: f32, aim_z: f32 },
+    SetBaseName { name: String },
+    SetKnob { name: String, value: f32 },
+    SaveKnobList { name: String },
+    Tween { start_frame: usize, end_frame: usize, knoblist0: String, knoblist1: String },
+    SetFrames { num_frames: usize },
+    VaryKnob { knob: String, start_frame: usize, end_frame: usize, start_val: f32, end_val: f32 },
+    SetAllKnobs { value: f32 },
 }
 
 pub struct Parser {
@@ -64,7 +70,7 @@ impl Parser {
         }
     }
 
-    pub fn create_syntax_tree(&mut self, tokens: VecDeque<Token>) -> Result<Vec<Command>, Box<dyn Error>> {
+    pub fn generate_command_list(&mut self, tokens: VecDeque<Token>) -> Result<Vec<Command>, Box<dyn Error>> {
         let mut commands: Vec<Command> = vec![];
 
         self.stack = tokens;
@@ -98,6 +104,13 @@ impl Parser {
                             Function::SetConstants => { self.handle_set_constants()? }
                             Function::SetShading => { self.handle_set_shading()? }
                             Function::SetCamera => { self.handle_set_camera()? }
+                            Function::SetBaseName => { self.handle_set_base_name()? }
+                            Function::SetKnob => { self.handle_set_knob()? }
+                            Function::SaveKnobList => { self.handle_save_knob_list()? }
+                            Function::Tween => { self.handle_tween()? }
+                            Function::SetFrames => { self.handle_set_frames()? }
+                            Function::VaryKnob => { self.handle_vary_knob()? }
+                            Function::SetAllKnobs => { self.handle_set_all_knobs()? }
                         }
                     )
                 }
@@ -118,18 +131,18 @@ impl Parser {
     }
 
     fn handle_move(&mut self) -> Result<Command, Box<dyn Error>> {
-        let a = Parser::convert_parameter(self.pop()?.value)?;
-        let b = Parser::convert_parameter(self.pop()?.value)?;
-        let c = Parser::convert_parameter(self.pop()?.value)?;
+        let a = Parser::convert_to_f32(self.pop()?.value)?;
+        let b = Parser::convert_to_f32(self.pop()?.value)?;
+        let c = Parser::convert_to_f32(self.pop()?.value)?;
         let knob = self.pop_optional_identifier();
 
         Ok(Command::Move { a, b, c, knob })
     }
 
     fn handle_scale(&mut self) -> Result<Command, Box<dyn Error>> {
-        let a = Parser::convert_parameter(self.pop()?.value)?;
-        let b = Parser::convert_parameter(self.pop()?.value)?;
-        let c = Parser::convert_parameter(self.pop()?.value)?;
+        let a = Parser::convert_to_f32(self.pop()?.value)?;
+        let b = Parser::convert_to_f32(self.pop()?.value)?;
+        let c = Parser::convert_to_f32(self.pop()?.value)?;
         let knob = self.pop_optional_identifier();
 
         Ok(Command::Scale { a, b, c, knob })
@@ -143,101 +156,101 @@ impl Parser {
             "z" => Rotation::Z,
             _ => return Err(format!("Invalid rotation axis: {}", axis_str).into()),
         };
-        let degrees = Parser::convert_parameter(self.pop()?.value)?;
+        let degrees = Parser::convert_to_f32(self.pop()?.value)?;
         let knob = self.pop_optional_identifier();
 
         Ok(Command::Rotate { axis, degrees, knob })
     }
 
     fn handle_line(&mut self) -> Result<Command, Box<dyn Error>> {
-        let x0 = Parser::convert_parameter(self.pop()?.value)?;
-        let y0 = Parser::convert_parameter(self.pop()?.value)?;
-        let z0 = Parser::convert_parameter(self.pop()?.value)?;
-        let x1 = Parser::convert_parameter(self.pop()?.value)?;
-        let y1 = Parser::convert_parameter(self.pop()?.value)?;
-        let z1 = Parser::convert_parameter(self.pop()?.value)?;
+        let x0 = Parser::convert_to_f32(self.pop()?.value)?;
+        let y0 = Parser::convert_to_f32(self.pop()?.value)?;
+        let z0 = Parser::convert_to_f32(self.pop()?.value)?;
+        let x1 = Parser::convert_to_f32(self.pop()?.value)?;
+        let y1 = Parser::convert_to_f32(self.pop()?.value)?;
+        let z1 = Parser::convert_to_f32(self.pop()?.value)?;
 
         Ok(Command::Line { x0, y0, z0, x1, y1, z1 })
     }
 
     fn handle_circle(&mut self) -> Result<Command, Box<dyn Error>> {
-        let x = Parser::convert_parameter(self.pop()?.value)?;
-        let y = Parser::convert_parameter(self.pop()?.value)?;
-        let z = Parser::convert_parameter(self.pop()?.value)?;
-        let r = Parser::convert_parameter(self.pop()?.value)?;
+        let x = Parser::convert_to_f32(self.pop()?.value)?;
+        let y = Parser::convert_to_f32(self.pop()?.value)?;
+        let z = Parser::convert_to_f32(self.pop()?.value)?;
+        let r = Parser::convert_to_f32(self.pop()?.value)?;
 
         Ok(Command::Circle { x, y, z, r })
     }
 
     fn handle_hermite(&mut self) -> Result<Command, Box<dyn Error>> {
-        let x0 = Parser::convert_parameter(self.pop()?.value)?;
-        let y0 = Parser::convert_parameter(self.pop()?.value)?;
-        let x1 = Parser::convert_parameter(self.pop()?.value)?;
-        let y1 = Parser::convert_parameter(self.pop()?.value)?;
-        let rx0 = Parser::convert_parameter(self.pop()?.value)?;
-        let ry0 = Parser::convert_parameter(self.pop()?.value)?;
-        let rx1 = Parser::convert_parameter(self.pop()?.value)?;
-        let ry1 = Parser::convert_parameter(self.pop()?.value)?;
+        let x0 = Parser::convert_to_f32(self.pop()?.value)?;
+        let y0 = Parser::convert_to_f32(self.pop()?.value)?;
+        let x1 = Parser::convert_to_f32(self.pop()?.value)?;
+        let y1 = Parser::convert_to_f32(self.pop()?.value)?;
+        let rx0 = Parser::convert_to_f32(self.pop()?.value)?;
+        let ry0 = Parser::convert_to_f32(self.pop()?.value)?;
+        let rx1 = Parser::convert_to_f32(self.pop()?.value)?;
+        let ry1 = Parser::convert_to_f32(self.pop()?.value)?;
 
         Ok(Command::Hermite { x0, y0, x1, y1, rx0, ry0, rx1, ry1 })
     }
 
     fn handle_bezier(&mut self) -> Result<Command, Box<dyn Error>> {
-        let x0 = Parser::convert_parameter(self.pop()?.value)?;
-        let y0 = Parser::convert_parameter(self.pop()?.value)?;
-        let x1 = Parser::convert_parameter(self.pop()?.value)?;
-        let y1 = Parser::convert_parameter(self.pop()?.value)?;
-        let x2 = Parser::convert_parameter(self.pop()?.value)?;
-        let y2 = Parser::convert_parameter(self.pop()?.value)?;
-        let x3 = Parser::convert_parameter(self.pop()?.value)?;
-        let y3 = Parser::convert_parameter(self.pop()?.value)?;
+        let x0 = Parser::convert_to_f32(self.pop()?.value)?;
+        let y0 = Parser::convert_to_f32(self.pop()?.value)?;
+        let x1 = Parser::convert_to_f32(self.pop()?.value)?;
+        let y1 = Parser::convert_to_f32(self.pop()?.value)?;
+        let x2 = Parser::convert_to_f32(self.pop()?.value)?;
+        let y2 = Parser::convert_to_f32(self.pop()?.value)?;
+        let x3 = Parser::convert_to_f32(self.pop()?.value)?;
+        let y3 = Parser::convert_to_f32(self.pop()?.value)?;
 
         Ok(Command::Bezier { x0, y0, x1, y1, x2, y2, x3, y3 })
     }
 
     fn handle_polygon(&mut self) -> Result<Command, Box<dyn Error>> {
-        let x0 = Parser::convert_parameter(self.pop()?.value)?;
-        let y0 = Parser::convert_parameter(self.pop()?.value)?;
-        let z0 = Parser::convert_parameter(self.pop()?.value)?;
-        let x1 = Parser::convert_parameter(self.pop()?.value)?;
-        let y1 = Parser::convert_parameter(self.pop()?.value)?;
-        let z1 = Parser::convert_parameter(self.pop()?.value)?;
-        let x2 = Parser::convert_parameter(self.pop()?.value)?;
-        let y2 = Parser::convert_parameter(self.pop()?.value)?;
-        let z2 = Parser::convert_parameter(self.pop()?.value)?;
+        let x0 = Parser::convert_to_f32(self.pop()?.value)?;
+        let y0 = Parser::convert_to_f32(self.pop()?.value)?;
+        let z0 = Parser::convert_to_f32(self.pop()?.value)?;
+        let x1 = Parser::convert_to_f32(self.pop()?.value)?;
+        let y1 = Parser::convert_to_f32(self.pop()?.value)?;
+        let z1 = Parser::convert_to_f32(self.pop()?.value)?;
+        let x2 = Parser::convert_to_f32(self.pop()?.value)?;
+        let y2 = Parser::convert_to_f32(self.pop()?.value)?;
+        let z2 = Parser::convert_to_f32(self.pop()?.value)?;
 
         Ok(Command::Polygon { x0, y0, z0, x1, y1, z1, x2, y2, z2 })
     }
 
     fn handle_box(&mut self) -> Result<Command, Box<dyn Error>> {
         let constants = self.pop_optional_identifier();
-        let x = Parser::convert_parameter(self.pop()?.value)?;
-        let y = Parser::convert_parameter(self.pop()?.value)?;
-        let z = Parser::convert_parameter(self.pop()?.value)?;
-        let w = Parser::convert_parameter(self.pop()?.value)?;
-        let h = Parser::convert_parameter(self.pop()?.value)?;
-        let d = Parser::convert_parameter(self.pop()?.value)?;
+        let x = Parser::convert_to_f32(self.pop()?.value)?;
+        let y = Parser::convert_to_f32(self.pop()?.value)?;
+        let z = Parser::convert_to_f32(self.pop()?.value)?;
+        let w = Parser::convert_to_f32(self.pop()?.value)?;
+        let h = Parser::convert_to_f32(self.pop()?.value)?;
+        let d = Parser::convert_to_f32(self.pop()?.value)?;
 
         Ok(Command::Box { constants, x, y, z, w, h, d })
     }
 
     fn handle_sphere(&mut self) -> Result<Command, Box<dyn Error>> {
         let constants = self.pop_optional_identifier();
-        let x = Parser::convert_parameter(self.pop()?.value)?;
-        let y = Parser::convert_parameter(self.pop()?.value)?;
-        let z = Parser::convert_parameter(self.pop()?.value)?;
-        let r = Parser::convert_parameter(self.pop()?.value)?;
+        let x = Parser::convert_to_f32(self.pop()?.value)?;
+        let y = Parser::convert_to_f32(self.pop()?.value)?;
+        let z = Parser::convert_to_f32(self.pop()?.value)?;
+        let r = Parser::convert_to_f32(self.pop()?.value)?;
 
         Ok(Command::Sphere { constants, x, y, z, r })
     }
 
     fn handle_torus(&mut self) -> Result<Command, Box<dyn Error>> {
         let constants = self.pop_optional_identifier();
-        let x = Parser::convert_parameter(self.pop()?.value)?;
-        let y = Parser::convert_parameter(self.pop()?.value)?;
-        let z = Parser::convert_parameter(self.pop()?.value)?;
-        let r0 = Parser::convert_parameter(self.pop()?.value)?;
-        let r1 = Parser::convert_parameter(self.pop()?.value)?;
+        let x = Parser::convert_to_f32(self.pop()?.value)?;
+        let y = Parser::convert_to_f32(self.pop()?.value)?;
+        let z = Parser::convert_to_f32(self.pop()?.value)?;
+        let r0 = Parser::convert_to_f32(self.pop()?.value)?;
+        let r1 = Parser::convert_to_f32(self.pop()?.value)?;
 
         Ok(Command::Torus { constants, x, y, z, r0, r1 })
     }
@@ -250,35 +263,35 @@ impl Parser {
     }
 
     fn handle_set_light(&mut self) -> Result<Command, Box<dyn Error>> {
-        let r = Parser::convert_parameter(self.pop()?.value)?;
-        let g = Parser::convert_parameter(self.pop()?.value)?;
-        let b = Parser::convert_parameter(self.pop()?.value)?;
-        let x = Parser::convert_parameter(self.pop()?.value)?;
-        let y = Parser::convert_parameter(self.pop()?.value)?;
-        let z = Parser::convert_parameter(self.pop()?.value)?;
+        let r = Parser::convert_to_f32(self.pop()?.value)?;
+        let g = Parser::convert_to_f32(self.pop()?.value)?;
+        let b = Parser::convert_to_f32(self.pop()?.value)?;
+        let x = Parser::convert_to_f32(self.pop()?.value)?;
+        let y = Parser::convert_to_f32(self.pop()?.value)?;
+        let z = Parser::convert_to_f32(self.pop()?.value)?;
 
         Ok(Command::SetLight { r, g, b, x, y, z })
     }
 
     fn handle_set_ambient(&mut self) -> Result<Command, Box<dyn Error>> {
-        let r = Parser::convert_parameter(self.pop()?.value)?;
-        let g = Parser::convert_parameter(self.pop()?.value)?;
-        let b = Parser::convert_parameter(self.pop()?.value)?;
+        let r = Parser::convert_to_f32(self.pop()?.value)?;
+        let g = Parser::convert_to_f32(self.pop()?.value)?;
+        let b = Parser::convert_to_f32(self.pop()?.value)?;
 
         Ok(Command::SetAmbient { r, g, b })
     }
 
     fn handle_set_constants(&mut self) -> Result<Command, Box<dyn Error>> {
         let name = self.pop()?.value;
-        let kar = Parser::convert_parameter(self.pop()?.value)?;
-        let kdr = Parser::convert_parameter(self.pop()?.value)?;
-        let ksr = Parser::convert_parameter(self.pop()?.value)?;
-        let kag = Parser::convert_parameter(self.pop()?.value)?;
-        let kdg = Parser::convert_parameter(self.pop()?.value)?;
-        let ksg = Parser::convert_parameter(self.pop()?.value)?;
-        let kab = Parser::convert_parameter(self.pop()?.value)?;
-        let kdb = Parser::convert_parameter(self.pop()?.value)?;
-        let ksb = Parser::convert_parameter(self.pop()?.value)?;
+        let kar = Parser::convert_to_f32(self.pop()?.value)?;
+        let kdr = Parser::convert_to_f32(self.pop()?.value)?;
+        let ksr = Parser::convert_to_f32(self.pop()?.value)?;
+        let kag = Parser::convert_to_f32(self.pop()?.value)?;
+        let kdg = Parser::convert_to_f32(self.pop()?.value)?;
+        let ksg = Parser::convert_to_f32(self.pop()?.value)?;
+        let kab = Parser::convert_to_f32(self.pop()?.value)?;
+        let kdb = Parser::convert_to_f32(self.pop()?.value)?;
+        let ksb = Parser::convert_to_f32(self.pop()?.value)?;
 
         Ok(Command::SetConstants { name, kar, kdr, ksr, kag, kdg, ksg, kab, kdb, ksb })
     }
@@ -286,6 +299,7 @@ impl Parser {
     fn handle_set_shading(&mut self) -> Result<Command, Box<dyn Error>> {
         let mode_str = self.pop()?.value.to_lowercase();
         let shading_mode = match mode_str.as_str() {
+            "wireframe" => ShadingMode::Wireframe,
             "flat" => ShadingMode::Flat,
             "gouraud" => ShadingMode::Gouraud,
             "phong" => ShadingMode::Phong,
@@ -296,17 +310,72 @@ impl Parser {
     }
 
     fn handle_set_camera(&mut self) -> Result<Command, Box<dyn Error>> {
-        let eye_x = Parser::convert_parameter(self.pop()?.value)?;
-        let eye_y = Parser::convert_parameter(self.pop()?.value)?;
-        let eye_z = Parser::convert_parameter(self.pop()?.value)?;
-        let aim_x = Parser::convert_parameter(self.pop()?.value)?;
-        let aim_y = Parser::convert_parameter(self.pop()?.value)?;
-        let aim_z = Parser::convert_parameter(self.pop()?.value)?;
+        let eye_x = Parser::convert_to_f32(self.pop()?.value)?;
+        let eye_y = Parser::convert_to_f32(self.pop()?.value)?;
+        let eye_z = Parser::convert_to_f32(self.pop()?.value)?;
+        let aim_x = Parser::convert_to_f32(self.pop()?.value)?;
+        let aim_y = Parser::convert_to_f32(self.pop()?.value)?;
+        let aim_z = Parser::convert_to_f32(self.pop()?.value)?;
 
         Ok(Command::SetCamera { eye_x, eye_y, eye_z, aim_x, aim_y, aim_z })
     }
 
-    fn convert_parameter(parameter: String) -> Result<f32, Box<dyn Error>> {
+    fn handle_set_base_name(&mut self) -> Result<Command, Box<dyn Error>> {
+        let name = self.pop()?.value;
+
+        Ok(Command::SetBaseName { name })
+    }
+
+    fn handle_set_knob(&mut self) -> Result<Command, Box<dyn Error>> {
+        let name = self.pop()?.value;
+        let value = Parser::convert_to_f32(self.pop()?.value)?;
+
+        Ok(Command::SetKnob { name, value })
+    }
+
+    fn handle_save_knob_list(&mut self) -> Result<Command, Box<dyn Error>> {
+        let name = self.pop()?.value;
+        
+        Ok(Command::SaveKnobList { name })
+    }
+
+    fn handle_tween(&mut self) -> Result<Command, Box<dyn Error>> {
+        let start_frame = Parser::convert_to_usize(self.pop()?.value)?;
+        let end_frame = Parser::convert_to_usize(self.pop()?.value)?;
+        let knoblist0 = self.pop()?.value;
+        let knoblist1 = self.pop()?.value;
+
+        Ok(Command::Tween { start_frame, end_frame, knoblist0, knoblist1 })
+    }
+
+    fn handle_set_frames(&mut self) -> Result<Command, Box<dyn Error>> {
+        let num_frames = Parser::convert_to_usize(self.pop()?.value)?;
+
+        Ok(Command::SetFrames { num_frames })
+    }
+
+    fn handle_vary_knob(&mut self) -> Result<Command, Box<dyn Error>> {
+        let knob = self.pop()?.value;
+        let start_frame = Parser::convert_to_usize(self.pop()?.value)?;
+        let end_frame = Parser::convert_to_usize(self.pop()?.value)?;
+        let start_val = Parser::convert_to_f32(self.pop()?.value)?;
+        let end_val = Parser::convert_to_f32(self.pop()?.value)?;
+        
+        Ok(Command::VaryKnob { knob, start_frame, end_frame, start_val, end_val })
+    }
+
+    fn handle_set_all_knobs(&mut self) -> Result<Command, Box<dyn Error>> {
+        let value = Parser::convert_to_f32(self.pop()?.value)?;
+
+        Ok(Command::SetAllKnobs { value })
+    }
+
+
+    fn convert_to_f32(parameter: String) -> Result<f32, Box<dyn Error>> {
         Ok(parameter.parse().expect(format!("Error parsing float: {}", parameter).as_str()))
+    }
+
+    fn convert_to_usize(parameter: String) -> Result<usize, Box<dyn Error>> {
+        Ok(parameter.parse().expect(format!("Error parsing usize: {}", parameter).as_str()))
     }
 }

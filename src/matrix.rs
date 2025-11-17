@@ -4,7 +4,7 @@ type Matrix = Vec<[f32; 4]>;
 
 use std::f32::consts::PI;
 
-#[derive(Debug)]
+#[derive(Clone, Copy, Debug)]
 pub enum Rotation {
     X,
     Y,
