@@ -6,7 +6,7 @@ pub const DEFAULT_SCRIPT: &str = "scripts/stonehenge.mdl";
 pub const DEFAULT_PICTURE_DIMENSIONS: (usize, usize) = (500, 500);
 pub const DEFAULT_BACKGROUND_COLOR: (usize, usize, usize) = WHITE;
 pub const DEFAULT_FOREGROUND_COLOR: (usize, usize, usize) = BLUE;
-pub const PARAMETRIC_STEPS: i32 = 100;
+pub const PARAMETRIC_STEPS: i32 = 30;
 pub const ENABLE_BACK_FACE_CULLING: bool = true;
 pub const ENABLE_Z_BUFFER: bool = true;
 pub const DEFAULT_LIGHTING_CONFIG: LightingConfig = LightingConfig {
@@ -19,10 +19,6 @@ pub const DEFAULT_REFLECTION_CONSTANTS: ReflectionConstants = ReflectionConstant
     diffuse: [0.5, 0.5, 0.5],
     specular: [0.5, 0.5, 0.5],
 };
-
-// only use gouraud and phong when there's no big flat surfaces e.g boxes
-// boxes will appear fuzzy since we're averaging vertex normals
-// flat looks fine if PARAMETRIC_STEPS is larger
 #[derive(Clone, Copy, Debug)]
 pub enum ShadingMode {
     Wireframe,
@@ -31,8 +27,9 @@ pub enum ShadingMode {
     Phong,
 }
 pub const DEFAULT_SHADING_MODE: ShadingMode = ShadingMode::Flat;
-
 pub const SPECULAR_EXPONENT: f32 = 4.0;
+pub const GENERATE_TEMPORARY_FRAME_FILES: bool = false;
+pub const DEFAULT_ANIMATION_DELAY_MS: u32 = 10;
 
 /* COLORS */
 pub const WHITE: (usize, usize, usize) = (255, 255, 255);

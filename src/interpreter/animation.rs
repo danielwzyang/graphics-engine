@@ -2,7 +2,9 @@ use super::parser::Command;
 use std::{
     error::Error,
     collections::HashMap,
+    fs::File
 };
+use image::{ImageBuffer, RgbaImage, Frame, Delay, codecs::gif::{GifEncoder, Repeat}};
 
 pub fn first_pass(commands: &Vec<Command>) -> Result<(usize, String), Box<dyn Error>> {
     let mut frames: usize = 0;
@@ -105,3 +107,53 @@ pub fn second_pass(commands: &Vec<Command>, frames: &usize) -> Result<Vec<HashMa
     Ok(frame_knobs)
 }
 
+pub struct Animation {
+    pub frames: Vec<Vec<u8>>,
+    pub width: usize,
+    pub height: usize,
+}
+
+impl Animation {
+    pub fn new(width: usize, height: usize) -> Self {
+        Self {
+            frames: Vec::new(),
+            width,
+            height,
+        }
+    }
+
+    pub fn add_frame(&mut self, rgb_buffer: &Vec<u8>) {
+        self.frames.push(rgb_buffer.clone());
+    }
+
+    pub fn save_as_file(&self, filename: String, delay: u32) -> Result<(), Box<dyn std::error::Error>> {
+        let file = File::create(&filename)?;
+        let mut encoder = GifEncoder::new(file);
+        encoder.set_repeat(Repeat::Infinite)?;
+
+        for frame_data in &self.frames {
+            let mut rgba = Vec::with_capacity(self.width * self.height * 4);
+
+            // convert to rgba because the Frame struct expects rgba
+            for chunk in frame_data.chunks(3) {
+                rgba.push(chunk[0]);
+                rgba.push(chunk[1]);
+                rgba.push(chunk[2]);
+                rgba.push(255);
+            }
+
+            let img: RgbaImage = ImageBuffer::from_raw(
+                self.width as u32,
+                self.height as u32,
+                rgba,
+            ).ok_or("Failed to create RGBA frame")?;
+
+            let frame = Frame::from_parts(img, 0, 0, Delay::from_numer_denom_ms(delay, 1));
+            encoder.encode_frame(frame)?;
+        }
+
+        println!("{} created.", filename);
+
+        Ok(())
+    }
+}

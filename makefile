@@ -13,4 +13,5 @@ run:
 	${RUN} ${SCRIPT}
 
 clean:
-	rm -f **/*.ppm **/*.png **/*.gif
+	rm *.ppm *.png *.gif
+	rm **/*.ppm **/*.png **/*.gif
