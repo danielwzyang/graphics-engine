@@ -29,7 +29,7 @@ pub enum ShadingMode {
 pub const DEFAULT_SHADING_MODE: ShadingMode = ShadingMode::Flat;
 pub const SPECULAR_EXPONENT: f32 = 4.0;
 pub const GENERATE_TEMPORARY_FRAME_FILES: bool = false;
-pub const DEFAULT_ANIMATION_DELAY_MS: u32 = 10;
+pub const DEFAULT_ANIMATION_DELAY_MS: u32 = 20; // for some reason when this is set to 10 ms it becomes even lower than 50 fps (20 ms)
 
 /* COLORS */
 pub const WHITE: (usize, usize, usize) = (255, 255, 255);
