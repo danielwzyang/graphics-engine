@@ -5,7 +5,7 @@ mod render;
 mod interpreter;
 mod vector;
 
-use std::{error::Error, env, time::Instant};
+use std::{error::Error, env};
 #[show_image::main]
 fn main() -> Result<(), Box<dyn Error>> {
     let arguments: Vec<String> = env::args().collect();
@@ -15,9 +15,7 @@ fn main() -> Result<(), Box<dyn Error>> {
         &String::from(constants::DEFAULT_SCRIPT)
     } else { &arguments[1] };
 
-    let start = Instant::now();
     interpreter::run_script(path)?;
-    println!("Finished in {:.2?}", start.elapsed());
 
     Ok(())
 }

@@ -22,11 +22,12 @@ pub const DEFAULT_REFLECTION_CONSTANTS: ReflectionConstants = ReflectionConstant
 #[derive(Clone, Copy, Debug)]
 pub enum ShadingMode {
     Wireframe,
+    FlatRandom,
     Flat,
     Gouraud,
     Phong,
 }
-pub const DEFAULT_SHADING_MODE: ShadingMode = ShadingMode::Flat;
+pub const DEFAULT_SHADING_MODE: ShadingMode = ShadingMode::FlatRandom;
 pub const SPECULAR_EXPONENT: f32 = 4.0;
 pub const GENERATE_TEMPORARY_FRAME_FILES: bool = false;
 pub const DEFAULT_ANIMATION_DELAY_MS: u32 = 20; // for some reason when this is set to 10 ms it becomes even lower than 50 fps (20 ms)

@@ -8,3 +8,4 @@ image = { version = "0.25", default-features = false, features = ["png", "gif"] 
 regex = "1.12.2"
 show-image = "0.14"
 stl_io = "0.10"
+rand = "0.9.2"

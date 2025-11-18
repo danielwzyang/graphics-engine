@@ -1,3 +1,5 @@
+use rand::Rng;
+
 type PolygonList = Vec<[f32; 4]>;
 type Vector = [f32; 3];
 
@@ -27,7 +29,7 @@ pub fn add_polygon(m: &mut PolygonList, x0: f32, y0: f32, z0: f32, x1: f32, y1: 
 }
 
 pub fn render_polygons(
-    m: &PolygonList, picture: &mut Picture, color: &(usize, usize, usize), 
+    m: &PolygonList, picture: &mut Picture, color: &(usize, usize, usize),
     shading_mode: &ShadingMode, lighting_config: &LightingConfig, reflection_constants: &ReflectionConstants
 ) {
     // for gouraud and phong shading
@@ -59,11 +61,12 @@ pub fn render_polygons(
 
                 *entry = add_vectors(&entry, &normal);
             }
+
+            for normal in vertex_normals.values_mut() {
+                *normal = normalize_vector(normal);
+            }
         }
 
-        for normal in vertex_normals.values_mut() {
-            *normal = normalize_vector(normal);
-        }
         }
         _ => {}
     }
@@ -117,10 +120,18 @@ pub fn render_polygons(
                         polygon[2][0] as isize, polygon[2][1] as isize, polygon[2][2],
                         &color,
                     );
-                }
+                },
+                ShadingMode::FlatRandom => {
+                    let mut rng = rand::rng();
+                    scan_line::flat(
+                        picture,
+                        polygon,
+                        &(rng.random::<u8>() as usize, rng.random::<u8>() as usize, rng.random::<u8>() as usize)
+                    );
+                },
                 ShadingMode::Flat => {
                     scan_line::flat(
-                        picture, 
+                        picture,
                         polygon,
                         &get_illumination(&normalize_vector(&normal), lighting_config, reflection_constants)
                     );
