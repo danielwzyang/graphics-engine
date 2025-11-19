@@ -10,8 +10,8 @@ use crate::{
     constants::{
         DEFAULT_ANIMATION_DELAY_MS, DEFAULT_BACKGROUND_COLOR, DEFAULT_FOREGROUND_COLOR, DEFAULT_LIGHTING_CONFIG, DEFAULT_PICTURE_DIMENSIONS, DEFAULT_REFLECTION_CONSTANTS, DEFAULT_SHADING_MODE, GENERATE_TEMPORARY_FRAME_FILES, ShadingMode
     }, interpreter::animation::Animation, matrix, render::{
-        LightingConfig, 
-        Picture, 
+        LightingConfig,
+        Picture,
         ReflectionConstants,
         edge_list::{add_bezier_curve, add_circle, add_edge, add_hermite_curve, render_edges},
         polygon_list::{add_box, add_polygon, add_sphere, add_torus, render_polygons},
@@ -80,7 +80,7 @@ impl ScriptContext {
                 _ => return Err(format!("Expected symbol to be lighting constants: {}", name).into())
             }
         }
-        
+
         matrix::multiply(&self.coordinate_stack.peek(), &mut self.polygons);
         matrix::multiply(&self.camera_matrix, &mut self.polygons);
 
@@ -139,12 +139,14 @@ pub fn evaluate_commands(commands: Vec<Command>) -> Result<(), Box<dyn Error>> {
 
             if GENERATE_TEMPORARY_FRAME_FILES {
                 context.picture.save_as_file(format!("temp_frames/{}_{:03}.png", basename, frame).as_str())?;
+            } else {
+                gif.add_frame(&context.picture.data);
             }
-            
-            gif.add_frame(&context.picture.data);
         }
 
-        gif.save_as_file(format!("{}.gif", basename), DEFAULT_ANIMATION_DELAY_MS)?;
+        if !GENERATE_TEMPORARY_FRAME_FILES {
+            gif.save_as_file(format!("{}.gif", basename), DEFAULT_ANIMATION_DELAY_MS)?;
+        }
     }
 
     Ok(())
