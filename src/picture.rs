@@ -127,9 +127,8 @@ impl Picture {
         let y = y as usize;
         let y = (self.yres - 1) - y;
 
-        // get rid of precision that might cause z fighting
-        let buffer_truncated = (self.z_buffer[y][x] * 10000.0 / 10000.0) as isize;
-        let z_truncated = (z * 10000.0 / 10000.0) as isize;
+        let z_truncated = (z * 10000.0) as isize;
+        let buffer_truncated = (self.z_buffer[y][x] * 10000.0) as isize;
 
         if ENABLE_Z_BUFFER && z_truncated < buffer_truncated {
             return;

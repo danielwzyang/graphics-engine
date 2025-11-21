@@ -88,10 +88,10 @@ pub fn flat(
     let distance1 = (y_mid - y_start) as f32 + 1.0;
     let distance2 = (y_end - y_mid) as f32 + 1.0;
 
-    let dx0 = if distance0 != 0.0 { (t[0] - b[0]) / distance0 } else { 0.0 };
-    let dz0 = if distance0 != 0.0 { (t[2] - b[2]) / distance0 } else { 0.0 };
-    let mut dx1 = if distance1 != 0.0 { (m[0] - b[0]) / distance1 } else { 0.0 };
-    let mut dz1 = if distance1 != 0.0 { (m[2] - b[2]) / distance1 } else { 0.0 };
+    let dx0 = (t[0] - b[0]) / distance0;
+    let dz0 = (t[2] - b[2]) / distance0;
+    let mut dx1 = (m[0] - b[0]) / distance1;
+    let mut dz1 = (m[2] - b[2]) / distance1;
 
     let mut x0 = b[0];
     let mut z0 = b[2];
@@ -102,11 +102,11 @@ pub fn flat(
     let mut y = y_start;
 
     while y <= y_end {
-        // switch slopes if we mass the middle
+        // switch slopes if we pass the middle
         if !flip && y >= y_mid {
             flip = true;
-            dx1 = if distance2 != 0.0 { (t[0] - m[0]) / distance2 } else { 0.0 };
-            dz1 = if distance2 != 0.0 { (t[2] - m[2]) / distance2 } else { 0.0 };
+            dx1 = (t[0] - m[0]) / distance2;
+            dz1 = (t[2] - m[2]) / distance2;
             x1 = m[0];
             z1 = m[2];
         }
@@ -172,19 +172,19 @@ pub fn gouraud(
     let distance1 = (y_mid - y_start) as f32 + 1.0;
     let distance2 = (y_end - y_mid) as f32 + 1.0;
 
-    let dx0 = if distance0 != 0.0 { (t[0] - b[0]) / distance0 } else { 0.0 };
-    let dz0 = if distance0 != 0.0 { (t[2] - b[2]) / distance0 } else { 0.0 };
-    let mut dx1 = if distance1 != 0.0 { (m[0] - b[0]) / distance1 } else { 0.0 };
-    let mut dz1 = if distance1 != 0.0 { (m[2] - b[2]) / distance1 } else { 0.0 };
+    let dx0 = (t[0] - b[0]) / distance0;
+    let dz0 = (t[2] - b[2]) / distance0;
+    let mut dx1 = (m[0] - b[0]) / distance1;
+    let mut dz1 = (m[2] - b[2]) / distance1;
 
     // we need to do the same calculations for colors as we did for the coordinates
-    let dr0 = if distance0 != 0.0 { (color_t.0 as f32 - color_b.0 as f32) / distance0 } else { 0.0 };
-    let dg0 = if distance0 != 0.0 { (color_t.1 as f32 - color_b.1 as f32) / distance0 } else { 0.0 };
-    let db0 = if distance0 != 0.0 { (color_t.2 as f32 - color_b.2 as f32) / distance0 } else { 0.0 };
+    let dr0 = (color_t.0 as f32 - color_b.0 as f32) / distance0;
+    let dg0 = (color_t.1 as f32 - color_b.1 as f32) / distance0;
+    let db0 = (color_t.2 as f32 - color_b.2 as f32) / distance0;
 
-    let mut dr1 = if distance1 != 0.0 { (color_m.0 as f32 - color_b.0 as f32) / distance1 } else { 0.0 };
-    let mut dg1 = if distance1 != 0.0 { (color_m.1 as f32 - color_b.1 as f32) / distance1 } else { 0.0 };
-    let mut db1 = if distance1 != 0.0 { (color_m.2 as f32 - color_b.2 as f32) / distance1 } else { 0.0 };
+    let mut dr1 = (color_m.0 as f32 - color_b.0 as f32) / distance1;
+    let mut dg1 = (color_m.1 as f32 - color_b.1 as f32) / distance1;
+    let mut db1 = (color_m.2 as f32 - color_b.2 as f32) / distance1;
 
     let mut x0 = b[0];
     let mut z0 = b[2];
@@ -204,14 +204,14 @@ pub fn gouraud(
     while y <= y_end {
         if !flip && y >= y_mid {
             flip = true;
-            dx1 = if distance2 != 0.0 { (t[0] - m[0]) / distance2 } else { 0.0 };
-            dz1 = if distance2 != 0.0 { (t[2] - m[2]) / distance2 } else { 0.0 };
+            dx1 = (t[0] - m[0]) / distance2;
+            dz1 = (t[2] - m[2]) / distance2;
             x1 = m[0];
             z1 = m[2];
 
-            dr1 = if distance2 != 0.0 { (color_t.0 as f32 - color_m.0 as f32) / distance2 } else { 0.0 };
-            dg1 = if distance2 != 0.0 { (color_t.1 as f32 - color_m.1 as f32) / distance2 } else { 0.0 };
-            db1 = if distance2 != 0.0 { (color_t.2 as f32 - color_m.2 as f32) / distance2 } else { 0.0 };
+            dr1 = (color_t.0 as f32 - color_m.0 as f32) / distance2;
+            dg1 = (color_t.1 as f32 - color_m.1 as f32) / distance2;
+            db1 = (color_t.2 as f32 - color_m.2 as f32) / distance2;
 
             r1 = color_m.0 as f32;
             g1 = color_m.1 as f32;
@@ -325,19 +325,19 @@ pub fn phong(
     let distance1 = (y_mid - y_start) as f32 + 1.0;
     let distance2 = (y_end - y_mid) as f32 + 1.0;
 
-    let dx0 = if distance0 != 0.0 { (t[0] - b[0]) / distance0 } else { 0.0 };
-    let dz0 = if distance0 != 0.0 { (t[2] - b[2]) / distance0 } else { 0.0 };
-    let mut dx1 = if distance1 != 0.0 { (m[0] - b[0]) / distance1 } else { 0.0 };
-    let mut dz1 = if distance1 != 0.0 { (m[2] - b[2]) / distance1 } else { 0.0 };
+    let dx0 = (t[0] - b[0]) / distance0;
+    let dz0 = (t[2] - b[2]) / distance0;
+    let mut dx1 = (m[0] - b[0]) / distance1;
+    let mut dz1 = (m[2] - b[2]) / distance1;
 
     // interpolate our normals
-    let dnx0 = if distance0 != 0.0 { (n_t[0] - n_b[0]) / distance0 } else { 0.0 };
-    let dny0 = if distance0 != 0.0 { (n_t[1] - n_b[1]) / distance0 } else { 0.0 };
-    let dnz0 = if distance0 != 0.0 { (n_t[2] - n_b[2]) / distance0 } else { 0.0 };
+    let dnx0 = (n_t[0] - n_b[0]) / distance0;
+    let dny0 = (n_t[1] - n_b[1]) / distance0;
+    let dnz0 = (n_t[2] - n_b[2]) / distance0;
 
-    let mut dnx1 = if distance1 != 0.0 { (n_m[0] - n_b[0]) / distance1 } else { 0.0 };
-    let mut dny1 = if distance1 != 0.0 { (n_m[1] - n_b[1]) / distance1 } else { 0.0 };
-    let mut dnz1 = if distance1 != 0.0 { (n_m[2] - n_b[2]) / distance1 } else { 0.0 };
+    let mut dnx1 = (n_m[0] - n_b[0]) / distance1;
+    let mut dny1 = (n_m[1] - n_b[1]) / distance1;
+    let mut dnz1 = (n_m[2] - n_b[2]) / distance1;
 
     let mut x0 = b[0];
     let mut z0 = b[2];
@@ -357,14 +357,14 @@ pub fn phong(
     while y <= y_end {
         if !flip && y >= y_mid {
             flip = true;
-            dx1 = if distance2 != 0.0 { (t[0] - m[0]) / distance2 } else { 0.0 };
-            dz1 = if distance2 != 0.0 { (t[2] - m[2]) / distance2 } else { 0.0 };
+            dx1 = (t[0] - m[0]) / distance2;
+            dz1 = (t[2] - m[2]) / distance2;
             x1 = m[0];
             z1 = m[2];
 
-            dnx1 = if distance2 != 0.0 { (n_t[0] - n_m[0]) / distance2 } else { 0.0 };
-            dny1 = if distance2 != 0.0 { (n_t[1] - n_m[1]) / distance2 } else { 0.0 };
-            dnz1 = if distance2 != 0.0 { (n_t[2] - n_m[2]) / distance2 } else { 0.0 };
+            dnx1 = (n_t[0] - n_m[0]) / distance2;
+            dny1 = (n_t[1] - n_m[1]) / distance2;
+            dnz1 = (n_t[2] - n_m[2]) / distance2;
 
             nx1 = n_m[0];
             ny1 = n_m[1];
