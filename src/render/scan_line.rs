@@ -241,10 +241,10 @@ pub fn gouraud(
 
         // calculate our steps for each pixel
         let distance = (x_end - x_start) as f32 + 1.0;
-        let dz = if distance != 0.0 { (z_end - z_start) / distance } else { 0.0 };
-        let dcr = if distance != 0.0 { (cr_end - cr_start) / distance } else { 0.0 };
-        let dcg = if distance != 0.0 { (cg_end - cg_start) / distance } else { 0.0 };
-        let dcb = if distance != 0.0 { (cb_end - cb_start) / distance } else { 0.0 };
+        let dz = (z_end - z_start) / distance;
+        let dcr = (cr_end - cr_start) / distance;
+        let dcg = (cg_end - cg_start) / distance;
+        let dcb = (cb_end - cb_start) / distance;
 
         // start drawing the line!
         let mut z = z_start;
@@ -392,10 +392,10 @@ pub fn phong(
         }
 
         let distance = (x_end - x_start) as f32 + 1.0;
-        let dz = if distance != 0.0 { (z_end - z_start) / distance } else { 0.0 };
-        let dnx = if distance != 0.0 { (nx_end - nx_start) / distance } else { 0.0 };
-        let dny = if distance != 0.0 { (ny_end - ny_start) / distance } else { 0.0 };
-        let dnz = if distance != 0.0 { (nz_end - nz_start) / distance } else { 0.0 };
+        let dz = (z_end - z_start) / distance;
+        let dnx = (nx_end - nx_start) / distance;
+        let dny = (ny_end - ny_start) / distance;
+        let dnz = (nz_end - nz_start) / distance;
 
         let mut z = z_start;
         let mut nx = nx_start;
